@@ -1,0 +1,3 @@
+Page « CRHB Week-end » : programme, résultats, visuels, affiches et textes du week-end,
+mis à jour automatiquement par GitHub (gratuit, ordinateur éteint).
+Envoie TOUT le contenu de ce dossier dans ton dépôt GitHub « outil-crhb ».

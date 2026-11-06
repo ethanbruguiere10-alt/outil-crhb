@@ -1,0 +1,189 @@
+<!doctype html><html><head><meta charset="utf-8">
+<!-- Modèle de l'affiche « NEXT GAME » (prochain match N1 à domicile).
+     Rempli par ffhb_resultats.py : les __XXX__ sont remplacés, les images arrivent en data URI. -->
+<style>
+@font-face{font-family:Anton;src:url(__ANTON__)}
+@font-face{font-family:Colo;src:url(__COLO__)}
+:root{--nuit:#020a1f;--or:#fddc1d;--navy:#061d4e}
+*{margin:0;padding:0;box-sizing:border-box}
+body{width:1080px;height:1350px;background:#000}
+#a{position:relative;width:1080px;height:1350px;overflow:hidden;background:var(--nuit);font-family:Anton,sans-serif;color:#fff}
+.l{position:absolute;inset:0}
+#photo{position:absolute;left:0;top:0;width:1080px;height:720px}
+.grain{opacity:.28;mix-blend-mode:overlay;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>")}
+/* haut : équipes à gauche, match d'ouverture à droite */
+.haut{position:absolute;top:52px;left:58px;right:58px;display:flex;justify-content:space-between;align-items:flex-start;text-shadow:0 2px 14px rgba(2,10,31,.9),0 0 3px rgba(2,10,31,.7)}
+.eq{font-size:40px;line-height:1.1;letter-spacing:1.5px}
+.eq span{color:var(--or)}
+.droite{display:flex;flex-direction:column;align-items:flex-end;gap:14px;margin-top:-24px}
+.ouvh{background:rgba(2,10,31,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:12px 18px 14px 22px;border-left:4px solid var(--or);text-shadow:none;text-align:right}
+/* infos en plus (bouton « Rajouter infos sur l'affiche ») */
+.infos{display:flex;align-items:center;gap:16px;max-width:460px;background:rgba(2,10,31,.72);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);padding:12px 18px 12px 16px;border-left:4px solid var(--or);text-shadow:none;text-align:right}
+.infos img{width:72px;height:72px;object-fit:contain;flex-shrink:0}
+.infos .tx{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:0}
+.infos .t1{font-family:Colo;text-transform:uppercase;font-size:22px;line-height:1;letter-spacing:1px;color:var(--or)}
+.infos .li{font-size:26px;line-height:1.05;letter-spacing:1px;text-transform:uppercase;color:#fff}
+.infos .seul{font-size:40px;line-height:1;letter-spacing:1.5px;text-transform:uppercase;color:var(--or)}
+.infos.un{padding:14px 22px 12px 20px}
+.ouvh .lab{font-family:Colo;text-transform:uppercase;font-size:24px;line-height:1;letter-spacing:1px;color:var(--or)}
+.ouvh .row{display:flex;align-items:center;justify-content:flex-end;gap:12px;margin-top:8px}
+.ouvh .cat{font-size:19px;letter-spacing:2.5px;background:var(--or);color:var(--navy);padding:5px 9px 4px}
+.ouvh .x{font-family:Colo;text-transform:uppercase;font-size:20px;color:var(--or);line-height:1}
+.ouvh img{height:58px;width:58px;object-fit:contain}
+.ouvh .nom{font-size:24px;letter-spacing:1px;max-width:190px;text-align:left;line-height:1}
+.ouvh b{font-weight:400;font-size:46px;letter-spacing:1px;margin-left:6px;padding-left:14px;border-left:2px solid var(--or);line-height:1}
+/* milieu */
+.date{position:absolute;left:0;right:0;top:722px;text-align:center;font-family:Colo;text-transform:uppercase;font-size:46px;line-height:1;letter-spacing:1px;color:var(--or);text-shadow:0 2px 16px rgba(2,10,31,.95),0 0 4px rgba(2,10,31,.8)}
+.date i{font-family:Anton;font-style:normal;font-size:28px;vertical-align:6px;margin-right:18px}
+/* bas : compétition | logos | heure + salle */
+.bas{position:absolute;left:58px;right:58px;bottom:148px;display:flex;justify-content:space-between;align-items:center}
+.cg{display:flex;align-items:center;gap:12px;font-size:18px;letter-spacing:3px;line-height:1.25;width:270px}
+.cg img{height:52px}.cg b{display:block;font-weight:400;font-size:30px;letter-spacing:1.5px;color:var(--or)}
+.cd{text-align:right;font-size:18px;letter-spacing:3px;line-height:1.1;width:270px;color:var(--or)}
+.cd b{display:block;font-weight:400;font-size:62px;letter-spacing:1px;color:#fff}
+.boite{position:relative;display:flex;align-items:center;gap:22px;padding:18px 34px}
+.boite img{height:112px;width:112px;object-fit:contain}
+.boite .x{font-family:Colo;text-transform:uppercase;font-size:38px;line-height:1;color:var(--or)}
+.boite .sans{width:112px;height:112px;border-radius:50%;border:3px solid var(--or);display:flex;align-items:center;justify-content:center;font-size:26px;text-align:center;line-height:1;padding:8px}
+.coin{position:absolute;width:30px;height:30px;border:3px solid var(--or)}
+.coin.a{top:0;left:0;border-right:0;border-bottom:0}.coin.b{top:0;right:0;border-left:0;border-bottom:0}
+.coin.c{bottom:0;left:0;border-right:0;border-top:0}.coin.d{bottom:0;right:0;border-left:0;border-top:0}
+.part{position:absolute;left:0;right:0;bottom:0;height:120px;display:flex;align-items:center;justify-content:center}
+.part img{width:1040px;opacity:.85}
+.pm{margin-top:18px;display:inline-flex;flex-direction:column;align-items:flex-start;gap:8px}
+.pm small{font-family:Colo;text-transform:uppercase;font-size:15px;letter-spacing:1.5px;color:var(--or)}
+.pm img{max-width:250px;max-height:74px;object-fit:contain;filter:drop-shadow(0 0 2px rgba(2,10,31,.9)) drop-shadow(0 2px 10px rgba(2,10,31,.9))}
+</style></head><body><div id="a">
+ <canvas id="photo" width="2160" height="1440"></canvas>
+ <div class="l" style="background:linear-gradient(180deg,rgba(2,10,31,.6) 0%,rgba(2,10,31,0) 16%,rgba(2,10,31,0) 42%,rgba(2,10,31,.3) 58%,rgba(2,10,31,.62) 74%,rgba(2,10,31,.88) 90%,#020a1f 100%)"></div>
+ <div class="l" style="background:linear-gradient(180deg,transparent 62%,rgba(2,10,31,.3) 78%,rgba(2,10,31,.75) 94%)"></div>
+ <div class="l" style="background:radial-gradient(120% 90% at 55% 40%,transparent 55%,rgba(0,0,0,.55))"></div>
+ <!-- motif fluide ton sur ton sous le bleu uni -->
+ <div class="l" style="-webkit-mask-image:linear-gradient(180deg,transparent 44%,#000 60%);mask-image:linear-gradient(180deg,transparent 44%,#000 60%)">
+  <img id="motif" style="position:absolute;left:0;top:600px;width:1080px;height:750px;opacity:.36">
+ </div>
+ <svg class="l" id="scint" viewBox="0 0 1080 1350" style="mix-blend-mode:screen;-webkit-mask-image:linear-gradient(180deg,transparent 44%,#000 58%);mask-image:linear-gradient(180deg,transparent 44%,#000 58%)"></svg>
+ <svg class="l" id="svgng" viewBox="0 0 1080 1350">
+  <defs><linearGradient id="blanc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dfe6f5"/></linearGradient></defs>
+  <text id="ng" x="540" y="968" text-anchor="middle" font-family="Anton" font-size="196" textLength="940" lengthAdjust="spacingAndGlyphs" fill="url(#blanc)">NEXT GAME</text>
+ </svg>
+ <div class="date"><i>▸</i><span id="date"></span></div>
+ <div class="l grain"></div>
+ <div class="haut">
+  <div><div class="eq"><span id="eqd" style="color:#fff"></span><br><span id="eqe"></span></div><div class="pm" id="pm"><small>Partenaire du match :</small><img id="pmlogo"></div></div>
+  <div class="droite"><div class="ouvh" id="ouv"></div><div class="infos" id="infos"></div></div>
+ </div>
+ <div class="bas">
+  <div class="cg"><img id="ballon"><div><b id="comp"></b><span id="journee"></span></div></div>
+  <div class="boite"><span class="coin a"></span><span class="coin b"></span><span class="coin c"></span><span class="coin d"></span>
+   <span id="logod"></span><span class="x">x</span><span id="logoe"></span></div>
+  <div class="cd"><b id="heure"></b><span id="salle"></span></div>
+ </div>
+ <div class="part"><img id="partenaires"></div>
+</div><script>
+
+// logos à surface égale : un écusson haut et un logo large paraissent de la même taille
+function egalise(sel,A,maxW,maxH){return Promise.all([...document.querySelectorAll(sel)].map(im=>new Promise(ok=>{
+ const go=()=>{const a=(im.naturalWidth||1)/(im.naturalHeight||1);let h=Math.sqrt(A/a),w=h*a;const k=Math.min(1,maxW/w,maxH/h);
+  im.style.width=(w*k)+"px";im.style.height=(h*k)+"px";im.style.maxWidth="none";im.style.maxHeight="none";im.style.objectFit="fill";ok()};
+ if(im.complete&&im.naturalWidth)go();else{im.addEventListener("load",go);im.addEventListener("error",()=>ok())}})))}
+const D=__DATA__;
+const $=i=>document.getElementById(i);
+// format A4 (portrait 1:1,414) : même affiche, la photo est plus haute et le milieu descend d'autant
+const E=D.format==="a4"?178:0;
+if(E){const H=1350+E;document.body.style.height=H+"px";$("a").style.height=H+"px";
+ const cv=$("photo");cv.height=Math.round(1440*(720+E)/720);cv.style.height=(720+E)+"px";
+ document.querySelector(".date").style.top=(722+E)+"px";
+ $("svgng").setAttribute("viewBox","0 0 1080 "+H);$("ng").setAttribute("y",968+E);
+ $("scint").setAttribute("viewBox","0 0 1080 "+H);$("motif").style.top=(600+E)+"px";}
+const logo=(src,nom,cls)=>src?`<img src="${src}" alt="">`:`<div class="sans">${nom}</div>`;
+$("date").textContent=D.date; $("eqd").textContent=D.nom_dom; $("eqe").textContent=D.nom_ext;
+$("comp").textContent=D.competition; $("journee").textContent=D.journee||"";
+$("heure").textContent=D.heure; $("salle").textContent=D.salle;
+$("logod").innerHTML=logo(D.logo_dom,D.nom_dom); $("logoe").innerHTML=logo(D.logo_ext,D.nom_ext);
+if(D.partenaire_match)$("pmlogo").src=D.partenaire_match;else $("pm").style.display="none";
+$("ballon").src=D.ballon; $("motif").src=D.motif; $("partenaires").src=D.partenaires;
+if(!D.partenaires)$("partenaires").style.display="none";
+if(D.ouverture){const o=D.ouverture;
+ $("ouv").innerHTML=`<div class="lab">En ouverture</div><div class="row"><span class="cat">${o.categorie}</span><span class="x">vs</span>${o.logo?`<img src="${o.logo}" alt="">`:`<span class="nom">${o.nom}</span>`}<b>${o.heure}</b></div>`;
+}else $("ouv").style.display="none";
+{const I=D.infos||{},L=I.lignes||[];
+ if(!L.length&&!I.image)$("infos").style.display="none";
+ else{const esc=t=>String(t).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+  if(L.length===1&&!I.image)$("infos").classList.add("un");
+  $("infos").innerHTML=(I.image?`<img src="${I.image}" alt="">`:"")+(L.length?`<div class="tx">${L.map((l,i)=>`<div class="${L.length===1?"seul":i===0?"t1":"li"}">${esc(l)}</div>`).join("")}</div>`:"");}}
+
+// scintillements (positions fixes)
+(function(){let sd=5;const r=()=>{sd=(sd*9301+49297)%233280;return sd/233280};
+ let h=`<defs><radialGradient id="halo"><stop offset="0" stop-color="#fff8d6" stop-opacity=".9"/><stop offset=".3" stop-color="#fddc1d" stop-opacity=".35"/><stop offset="1" stop-color="#fddc1d" stop-opacity="0"/></radialGradient>
+  <linearGradient id="trait" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff6c8" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <filter id="flou"><feGaussianBlur stdDeviation="1.2"/></filter></defs>`;
+ h+=`<rect x="60" y="950" width="520" height="1.4" fill="url(#trait)" transform="rotate(-18 320 950)"/>`;
+ const et=(x,y,t,o)=>`<g transform="translate(${x} ${y})" opacity="${o}"><circle r="${t*3.2}" fill="url(#halo)"/><path d="M0 ${-t*2.6}L${t*.22} ${-t*.22}L${t*2.6} 0L${t*.22} ${t*.22}L0 ${t*2.6}L${-t*.22} ${t*.22}L${-t*2.6} 0L${-t*.22} ${-t*.22}Z" fill="#fffbe8"/></g>`;
+ h+=et(1010,940,6,.95)+et(70,800,4,.8);
+ for(let i=0;i<18;i++){const x=r()*1080,y=740+r()*220,t=.5+r()*1.4,o=.25+r()*.6;
+  h+=`<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${t.toFixed(2)}" fill="${r()<.6?'#fddc1d':'#ffffff'}" opacity="${o.toFixed(2)}" ${t>1.3?'filter="url(#flou)"':''}/>`}
+ $("scint").innerHTML=`<g transform="translate(0 ${E})">${h}</g>`})();
+
+// ---- photo : recadrage sur le joueur en jaune, filtre bleu, couleur gardée sur le joueur, fondu vers le bas ----
+function chargement(src){return new Promise((ok,ko)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=ko;i.src=src})}
+const clamp=v=>v<0?0:v>1?1:v;
+function jaune(r,g,b){ // 0..1 : maillot jaune du club
+ const mx=Math.max(r,g,b),mn=Math.min(r,g,b),v=mx/255,s=mx?(mx-mn)/mx:0;if(mx===mn)return 0;
+ let h=(mx===r?((g-b)/(mx-mn))%6:mx===g?(b-r)/(mx-mn)+2:(r-g)/(mx-mn)+4)*60;if(h<0)h+=360;
+ return clamp(1-Math.abs(h-50)/16)*clamp((s-.35)/.2)*clamp((v-.3)/.2)}
+function peau(r,g,b){const mx=Math.max(r,g,b),mn=Math.min(r,g,b),s=mx?(mx-mn)/mx:0;if(mx===mn)return 0;
+ let h=(mx===r?((g-b)/(mx-mn))%6:mx===g?(b-r)/(mx-mn)+2:(r-g)/(mx-mn)+4)*60;if(h<0)h+=360;
+ return clamp(1-Math.abs(h-22)/16)*clamp((s-.15)/.15)*clamp((mx/255-.25)/.2)}
+async function photo(){
+ const cv=$("photo"), img=await chargement(D.photo), W=cv.width, H=cv.height, cx=cv.getContext("2d",{willReadFrequently:true});
+ // 1) où est le joueur en jaune ?
+ const aw=240, ah=Math.max(1,Math.round(img.height*aw/img.width)), ac=document.createElement("canvas");ac.width=aw;ac.height=ah;
+ const ax=ac.getContext("2d",{willReadFrequently:true});ax.drawImage(img,0,0,aw,ah);const ad=ax.getImageData(0,0,aw,ah).data;
+ // centre horizontal du jaune, puis haut/bas du maillot autour de ce centre (on ignore le public en jaune plus loin)
+ let sx=0,sw=0;for(let y=0;y<ah;y++)for(let x=0;x<aw;x++){const k=(y*aw+x)*4,w=jaune(ad[k],ad[k+1],ad[k+2])**2;sx+=w*x;sw+=w}
+ const ok=sw>3;let fx=ok?sx/sw/aw:.5;
+ // affinage : centre recalculé seulement près du joueur principal
+ let sx2=0,sw2=0;const ligne=new Float32Array(ah);
+ for(let y=0;y<ah;y++)for(let x=0;x<aw;x++){if(Math.abs(x/aw-fx)>.14)continue;const k=(y*aw+x)*4,w=jaune(ad[k],ad[k+1],ad[k+2])**2;sx2+=w*x;sw2+=w;ligne[y]+=w}
+ if(sw2>3)fx=sx2/sw2/aw;
+ let cum=0,y10=.3*ah,y90=.6*ah,a10=false;for(let y=0;y<ah;y++){cum+=ligne[y];if(!a10&&cum>=sw2*.1){y10=y;a10=true}if(cum>=sw2*.9){y90=y;break}}
+ const haut=sw2>3?y10/ah:.3, bas=sw2>3?y90/ah:.6;
+ // 2) recadrage : le maillot occupe ~30 % de la hauteur, sa partie haute à 30 % (la tête reste visible), joueur un peu à gauche
+ const s0=Math.max(W/img.width,H/img.height), hj=Math.max(.02,bas-haut)*img.height*s0;
+ const z=Math.min(1.35,Math.max(1,.36*H/hj)), s=s0*z, dw=img.width*s, dh=img.height*s;
+ let ox=W*.45-fx*dw, oy=H*.38-haut*dh; ox=Math.min(0,Math.max(W-dw,ox)); oy=Math.min(0,Math.max(H-dh,oy));
+ cx.drawImage(img,ox,oy,dw,dh);
+ // 3) masque « joueur » : jaune + peau proche du jaune, adouci
+ const mw=W/4, mh=H/4, mc=document.createElement("canvas");mc.width=mw;mc.height=mh;const mx=mc.getContext("2d",{willReadFrequently:true});
+ mx.drawImage(cv,0,0,mw,mh);const md=mx.getImageData(0,0,mw,mh),mp=md.data,jy=new Float32Array(mw*mh);
+ for(let i=0;i<mw*mh;i++)jy[i]=jaune(mp[i*4],mp[i*4+1],mp[i*4+2]);
+ const pres=document.createElement("canvas");pres.width=mw;pres.height=mh;const px=pres.getContext("2d",{willReadFrequently:true});
+ const pi=px.createImageData(mw,mh);for(let i=0;i<mw*mh;i++){pi.data[i*4+3]=jy[i]*255}px.putImageData(pi,0,0);
+ const near=document.createElement("canvas");near.width=mw;near.height=mh;const nx=near.getContext("2d",{willReadFrequently:true});
+ nx.filter="blur(10px)";nx.drawImage(pres,0,0);nx.drawImage(pres,0,0);const nd=nx.getImageData(0,0,mw,mh).data;
+ const fin=px.createImageData(mw,mh);
+ for(let i=0;i<mw*mh;i++){const p=peau(mp[i*4],mp[i*4+1],mp[i*4+2])*clamp(nd[i*4+3]/255*3);fin.data[i*4+3]=Math.max(jy[i],p)*255}
+ px.putImageData(fin,0,0);
+ const full=document.createElement("canvas");full.width=W;full.height=H;const fxx=full.getContext("2d",{willReadFrequently:true});
+ fxx.filter="blur(4px)";fxx.drawImage(pres,0,0,W,H);const mk=fxx.getImageData(0,0,W,H).data;
+ // 4) filtre bleu + couleur gardée sur le joueur (fondu vers le bas) + fondu de la photo dans le bleu nuit
+ const id=cx.getImageData(0,0,W,H),p=id.data, nav=[2,10,31];
+ for(let y=0;y<H;y++){const fy2=y/H, grad=Math.pow(clamp((.80-fy2)/.30),1.2), al=clamp((1-fy2)/.45);
+  for(let x=0;x<W;x++){const k=(y*W+x)*4,r=p[k]/255,g=p[k+1]/255,b=p[k+2]/255;
+   let L=clamp((.3*r+.59*g+.11*b-.03)/.85)**.95, d0,d1,d2;
+   if(L<.55){const t=L/.55;d0=(3+19*t)/255;d1=(10+44*t)/255;d2=(32+103*t)/255}
+   else{const t=(L-.55)/.45;d0=(22+188*t)/255;d1=(54+168*t)/255;d2=(135+115*t)/255}
+   const m=mk[k+3]/255*grad, gm=(r+g+b)/3;
+   const c0=((r*.8+gm*.2)*.88)*.84+d0*.16, c1=((g*.8+gm*.2)*.88+.02)*.84+d1*.16, c2=((b*.8+gm*.2)*.88+.07)*.84+d2*.16;
+   const o0=(d0*.82+r*.18)*(1-m)+c0*m, o1=(d1*.82+g*.18)*(1-m)+c1*m, o2=(d2*.82+b*.18)*(1-m)+c2*m;
+   p[k]=Math.min(255,(o0*al*255+nav[0]*(1-al))); p[k+1]=Math.min(255,(o1*al*255+nav[1]*(1-al))); p[k+2]=Math.min(255,(o2*al*255+nav[2]*(1-al)))}}
+ cx.putImageData(id,0,0);
+}
+Promise.all([egalise(".boite img",104*104,140,124),egalise(".ouvh img",54*54,76,62),egalise(".infos img",68*68,120,84),photo().catch(e=>{document.body.dataset.erreur=String(e)}),document.fonts.ready,
+ ...[...document.images].map(i=>i.complete?1:new Promise(ok=>{i.onload=i.onerror=ok}))])
+ .then(()=>{{const c=$("comp");c.style.whiteSpace="nowrap";let f=30;const lim=270-64;while(c.scrollWidth>lim&&f>18){f-=1;c.style.fontSize=f+"px"}}
+  document.querySelectorAll(".infos .li,.infos .t1,.infos .seul").forEach(e=>{let f=parseFloat(getComputedStyle(e).fontSize);
+  while(e.scrollWidth>e.clientWidth+1&&f>14){f-=1;e.style.fontSize=f+"px"}});
+  setTimeout(()=>document.body.dataset.pret="1",150)});
+</script></body></html>

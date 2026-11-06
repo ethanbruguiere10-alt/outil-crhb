@@ -1,0 +1,4 @@
+playwright
+certifi
+imageio-ffmpeg
+pillow

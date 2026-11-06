@@ -1,0 +1,138 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CRHB Week-end</title>
+<link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CRHB"><meta name="theme-color" content="#061d4e">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@500;600;700;800&display=swap">
+<style>
+/* Layout : bandeau club bleu nuit, onglets collants, cartes de match empilées (1 colonne téléphone, 2 sur grand écran) */
+:root{
+ --nuit:#061d4e; --jaune:#fddc1d; --bg:#eef1f7; --carte:#ffffff; --texte:#0f1a33; --doux:#5b6683; --trait:#d9dfeb;
+ --win:#127a41; --loss:#c0281c; --draw:#9a6b00; --chip:#e3e9f6;
+ --f-titre:"Anton",Impact,"Arial Narrow",sans-serif; --f-texte:"Montserrat",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#070d1d;--carte:#111a33;--texte:#e8ecf6;--doux:#97a3c1;--trait:#24304f;--win:#4fd08a;--loss:#ff7b6e;--draw:#e5b94c;--chip:#1b2747;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#070d1d;--carte:#111a33;--texte:#e8ecf6;--doux:#97a3c1;--trait:#24304f;--win:#4fd08a;--loss:#ff7b6e;--draw:#e5b94c;--chip:#1b2747;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--texte);font:15px/1.45 var(--f-texte);margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--nuit)}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{background:var(--nuit);color:#fff}
+header .wrap{display:flex;align-items:center;gap:14px;padding-block:18px 16px}
+header img{width:52px;height:52px;object-fit:contain;flex-shrink:0}
+header h1{font:400 30px/1 var(--f-titre);letter-spacing:.5px;margin:0;text-wrap:balance}
+header h1 span{color:var(--jaune)}
+header p{margin:4px 0 0;font-size:12.5px;color:#b9c5e3}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--nuit);border-bottom:3px solid var(--jaune)}
+nav .wrap{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;padding-block:0}
+nav .wrap::-webkit-scrollbar{display:none}
+nav button{flex:1 0 auto;background:transparent;border:0;color:#c7d1ea;font:700 13px var(--f-texte);text-transform:uppercase;letter-spacing:.06em;padding:12px 14px;cursor:pointer;border-radius:8px 8px 0 0}
+nav button[aria-selected="true"]{background:var(--jaune);color:var(--nuit)}
+nav button:focus-visible{outline:2px solid #fff;outline-offset:-4px}
+main{padding-block:18px 40px}
+.tete{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.tete h2{font:400 26px/1.05 var(--f-titre);letter-spacing:.4px;margin:0;text-transform:uppercase}
+.tete small{color:var(--doux);font-size:13px;font-weight:600}
+.groupe{font:700 12px var(--f-texte);letter-spacing:.12em;text-transform:uppercase;color:var(--doux);margin:18px 0 8px;display:flex;align-items:center;gap:10px}
+.groupe::after{content:"";flex:1;height:1px;background:var(--trait)}
+.liste{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:10px}
+.match{background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:12px 14px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+.match .meta{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--doux);font-weight:600}
+.cat{background:var(--jaune);color:var(--nuit);font:400 14px/1 var(--f-titre);letter-spacing:.5px;padding:4px 7px 3px;border-radius:5px}
+.lieu{background:var(--chip);color:var(--texte);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.lieu.dom{background:var(--nuit);color:var(--jaune)}
+.eq{min-width:0;font-weight:700;font-size:14.5px;line-height:1.3;text-transform:uppercase}
+.eq .vs{font-weight:600;color:var(--doux);font-size:11px;text-transform:lowercase;margin:0 6px}
+.droite{text-align:right;font:400 26px/1 var(--f-titre);font-variant-numeric:tabular-nums;white-space:nowrap}
+.droite.V{color:var(--win)}.droite.D{color:var(--loss)}.droite.N{color:var(--draw)}
+.droite small{display:block;font:700 10px var(--f-texte);letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+.vide{background:var(--carte);border:1px dashed var(--trait);border-radius:14px;padding:22px;text-align:center;color:var(--doux)}
+.bilan{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.bilan span{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--chip)}
+.bilan .v{color:var(--win)}.bilan .d{color:var(--loss)}.bilan .n{color:var(--draw)}
+.visuels{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr));gap:14px}
+.visuels figure{margin:0;display:flex;flex-direction:column;gap:6px}
+.visuels img{width:100%;max-width:100%;aspect-ratio:4/5;object-fit:cover;border-radius:10px;border:1px solid var(--trait);background:var(--chip);display:block}
+.btns a,.visuels a{font-size:13px;font-weight:700;color:var(--texte);text-decoration:none;text-align:center;padding:8px;border:1px solid var(--trait);border-radius:9px;background:var(--carte)}
+.astuce{font-size:13px;color:var(--doux);margin:0 0 14px;max-width:65ch}
+.bloc{background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:14px;margin-bottom:14px}
+.bloc .tete{margin-bottom:8px}
+.bloc h3{font:400 20px var(--f-titre);margin:0;text-transform:uppercase;letter-spacing:.3px}
+pre{white-space:pre-wrap;word-break:break-word;margin:0;font:14px/1.55 var(--f-texte);background:var(--bg);border-radius:10px;padding:12px;max-height:420px;overflow:auto}
+.copier{background:var(--nuit);color:var(--jaune);border:0;border-radius:9px;padding:8px 14px;font:700 13px var(--f-texte);cursor:pointer}
+.copier:focus-visible,.visuels a:focus-visible{outline:2px solid var(--jaune);outline-offset:2px}
+footer{color:var(--doux);font-size:12px;padding-block:0 30px}
+.charge{color:var(--doux);padding:30px 0;text-align:center}
+@media (prefers-reduced-motion:no-preference){.match,.visuels figure{animation:monte .25s ease both}@keyframes monte{from{transform:translateY(4px)}to{transform:none}}}
+html{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+img{max-width:100%}
+.btns{display:flex;gap:6px;flex-wrap:wrap}.btns a{flex:1 1 auto}
+.affiche{display:grid;grid-template-columns:minmax(0,320px) minmax(0,1fr);gap:16px;align-items:start;background:var(--carte);border:1px solid var(--trait);border-radius:14px;padding:14px;margin-bottom:14px}
+.affiche img{width:100%;border-radius:10px;border:1px solid var(--trait);display:block}
+.affiche h3{font:400 22px/1.1 var(--f-titre);margin:0 0 6px;text-transform:uppercase}
+.affiche p{margin:0 0 12px;color:var(--doux);font-weight:600;font-size:13.5px}
+@media(max-width:620px){.affiche{grid-template-columns:1fr}}
+</style></head><body>
+<header><div class="wrap"><img src="logo.png" alt="Logo Caluire-Rillieux Handball"><div><h1>CRHB <span>Week-end</span></h1><p id="maj">Chargement…</p></div></div></header>
+<nav><div class="wrap" role="tablist">
+ <button role="tab" data-t="programme" aria-selected="false">Programme</button>
+ <button role="tab" data-t="resultats" aria-selected="false">Résultats</button>
+ <button role="tab" data-t="visuels" aria-selected="false">Visuels</button>
+ <button role="tab" data-t="affiches" aria-selected="false">Affiches</button>
+ <button role="tab" data-t="textes" aria-selected="false">Textes</button>
+</div></nav>
+<main class="wrap" id="contenu"><p class="charge">Chargement des matchs…</p></main>
+<footer class="wrap" id="pied"></footer>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const jour=iso=>new Date(iso+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+let D=null,onglet=null;
+function periode(s){return s?`${jour(s.du)} – ${jour(s.au)}`:""}
+function groupes(ms){const g=[];ms.forEach(m=>{const n=m.groupe_nom||"";if(!g.length||g[g.length-1].nom!==n)g.push({nom:n,ms:[]});g[g.length-1].ms.push(m)});return g}
+function carte(m,res){const dom=m.lieu==="DOMICILE";
+ const droite=res?`<div class="droite ${m.res||""}">${m.sd} – ${m.se}<small>${{V:"Victoire",D:"Défaite",N:"Nul"}[m.res]||""}</small></div>`
+  :`<div class="droite">${esc(m.heure||"—")}${m.heure?"":"<small>horaire à fixer</small>"}</div>`;
+ return`<article class="match"><div class="meta"><span class="cat">${esc(m.categorie)}</span><span>${esc(m.jour)}</span><span class="lieu ${dom?"dom":""}">${dom?"Domicile":"Extérieur"}</span>${m.salle?`<span>${esc(m.salle)}</span>`:""}</div>
+  <div class="eq">${esc(m.dom)}<span class="vs">vs</span>${esc(m.ext)}</div>${droite}</article>`}
+function vueMatchs(cle){const s=D.semaines[cle],res=cle==="resultats";
+ let h=`<div class="tete"><h2>${res?"Résultats":"Programme"}</h2><small>${periode(s)}</small></div>`;
+ if(res&&s.matchs.length){const b={V:0,D:0,N:0};s.matchs.forEach(m=>{if(b[m.res]!=null)b[m.res]++});
+  h+=`<div class="bilan"><span class="v">${b.V} victoire${b.V>1?"s":""}</span><span class="d">${b.D} défaite${b.D>1?"s":""}</span>${b.N?`<span class="n">${b.N} nul${b.N>1?"s":""}</span>`:""}</div>`}
+ if(!s.matchs.length)return h+`<div class="vide">${res?"Aucun score du club ce week-end-là.":"Aucun match du club prévu ce week-end."}</div>`;
+ return h+groupes(s.matchs).map(g=>`<div class="groupe">${esc(g.nom)}</div><div class="liste">${g.ms.map(m=>carte(m,res)).join("")}</div>`).join("")}
+function vueVisuels(){let h=`<p class="astuce">Sur téléphone : appui long sur une image → « Enregistrer l'image » (ou « Ouvrir en grand » puis enregistrer). Format 1080 × 1350, prêt pour Instagram.</p>`;
+ for(const [cle,nom] of [["programme","Programme"],["resultats","Résultats"]]){const s=D.semaines[cle];
+  h+=`<div class="tete"><h2>${nom}</h2><small>${periode(s)}</small></div>`;
+  h+=s.visuels.length?`<div class="visuels">${s.visuels.map((v,i)=>`<figure><img src="${esc(v)}" alt="${nom} ${i+1}" loading="lazy"><div class="btns"><a href="${esc(v)}" download>Télécharger</a><a href="${esc(v)}" target="_blank" rel="noopener">Ouvrir</a></div></figure>`).join("")}</div>`
+   :`<div class="vide">Pas de visuel ${nom.toLowerCase()} pour ce week-end.</div>`;
+  h+=`<div style="height:22px"></div>`}
+ return h}
+function vueAffiches(){const A=D.affiches||[];
+ if(!A.length)return'<div class="tete"><h2>Affiches</h2></div><div class="vide">Pas de match de N1 à domicile à venir pour l&#39;instant.</div>';
+ return'<div class="tete"><h2>Affiches</h2><small>prochain match de N1 à domicile</small></div><p class="astuce">Créées automatiquement (même photo à chaque mise à jour pour un même match). Pour changer de photo, ajouter un logo ou des infos, utilise l&#39;outil sur l&#39;ordinateur.</p>'+
+  A.map(a=>{const j=new Date(a.date+"T12:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+   return`<section class="affiche"><img src="${esc(a.fichier)}" alt="Affiche ${esc(a.match)}" loading="lazy"><div><h3>${esc(a.type||"")}</h3>
+    <p>${esc(a.match)}<br>${esc(j)} à ${esc((a.heure||"?").replace(":","h"))}${a.tour?" · "+esc(a.tour):a.journee?" · Journée "+esc(a.journee):""}<br>${esc(a.salle||"")}</p>
+    <div class="btns"><a href="${esc(a.fichier)}" download>Réseaux (PNG)</a>${a.fichier_a4?`<a href="${esc(a.fichier_a4)}" download>A4 (PNG)</a>`:""}${a.fichier_pdf?`<a href="${esc(a.fichier_pdf)}" download>A4 (PDF)</a>`:""}</div></div></section>`}).join("")}
+function vueTextes(){return[["programme","Programme"],["resultats","Résultats"]].map(([cle,nom])=>{const s=D.semaines[cle];
+ return`<section class="bloc"><div class="tete"><h3>${nom} · ${periode(s)}</h3><button class="copier" data-c="${cle}">Copier le texte</button></div><pre id="t-${cle}">${esc(s.texte||"—")}</pre></section>`}).join("")}
+function montrer(t){onglet=t;document.querySelectorAll("nav button").forEach(b=>b.setAttribute("aria-selected",b.dataset.t===t));
+ if(location.hash!=="#"+t)history.replaceState(null,"","#"+t);
+ const c=$("#contenu");c.innerHTML=t==="visuels"?vueVisuels():t==="affiches"?vueAffiches():t==="textes"?vueTextes():vueMatchs(t);
+ c.querySelectorAll(".copier").forEach(b=>b.onclick=()=>{const p=$("#t-"+b.dataset.c);
+  const ok=()=>{b.textContent="Copié ✓";setTimeout(()=>b.textContent="Copier le texte",2000)};
+  const sel=()=>{const r=document.createRange();r.selectNodeContents(p);const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent="Texte sélectionné : copie-le"};
+  try{navigator.clipboard.writeText(p.textContent).then(ok,sel)}catch(e){sel()}})}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>montrer(b.dataset.t));
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(D&&h&&h!==onglet&&["programme","resultats","visuels","affiches","textes"].includes(h))montrer(h)});
+fetch("donnees.json",{cache:"no-store"}).then(r=>r.json()).then(d=>{D=d;
+ const g=new Date(d.genere);$("#maj").textContent="Mis à jour le "+g.toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})+" à "+g.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}).replace(":","h");
+ $("#pied").textContent="Données lues sur ffhandball.fr. Mise à jour automatique (GitHub) chaque jour vers 8h45 et 21h45, même ordinateur éteint.";
+ const h=location.hash.slice(1),j=new Date().getDay();
+ montrer(["programme","resultats","visuels","affiches","textes"].includes(h)?h:(j>=1&&j<=2&&d.semaines.resultats.matchs.length?"resultats":"programme"))})
+ .catch(()=>{$("#contenu").innerHTML='<div class="vide">Les données n\'ont pas pu être chargées. Réessaie dans un instant.</div>';$("#maj").textContent=""});
+</script>
+</body></html>

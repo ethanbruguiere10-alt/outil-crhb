@@ -1,0 +1,99 @@
+{
+  "version": 6,
+  "club": "Caluire, Rillieux",
+  "competitions": [
+    {
+      "nom": "N3 F",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/nationale-3-feminine-aura-30494/equipe-2117124/"
+    },
+    {
+      "nom": "SF 2",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/1ere-division-feminine-p16-aura-30500/poule-196354/"
+    },
+    {
+      "nom": "-18 F",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m18-ans-feminin-excellence-aura-30507/poule-190309/"
+    },
+    {
+      "nom": "-15 F",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m15-ans-feminin-division-2-aura-30519/poule-196652/"
+    },
+    {
+      "nom": "-13 F",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m13-ans-feminin-excellence-aura-30510/poule-190367/"
+    },
+    {
+      "nom": "N1 M",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/national/nationale-1-masculine-2026-2027-32469/poule-190839/"
+    },
+    {
+      "nom": "N3 M",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/national/nationale-3-masculine-2026-2027-32502/poule-190855/"
+    },
+    {
+      "nom": "S3 M Région",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/honneur-masculin-aura-30498/poule-190173/"
+    },
+    {
+      "nom": "S4 M Départemental",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/2eme-division-masculine-p16-aura-30501/poule-196320/"
+    },
+    {
+      "nom": "-18M",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m18-ans-masculin-excellence-aura-30502/poule-191206/"
+    },
+    {
+      "nom": "-15M 1",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m15-ans-masculin-excellence-aura-30504/poule-190325/"
+    },
+    {
+      "nom": "-15M 2",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m15-ans-masculin-division-1-aura-30512/poule-196976/"
+    },
+    {
+      "nom": "-13M 1",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m13-ans-masculin-excellence-aura-30506/poule-190354/"
+    },
+    {
+      "nom": "-13M 2",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m13-ans-masculin-division-1-aura-30513/poule-196991/"
+    },
+    {
+      "nom": "-13M 3",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m13-ans-masculin-division-2-aura-30518/poule-196712/"
+    },
+    {
+      "nom": "-11 (1)",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/departemental/championnat-masculin-11-32912/poule-197308/"
+    },
+    {
+      "nom": "-11 (2)",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/departemental/championnat-masculin-11-32912/poule-197211/"
+    },
+    {
+      "nom": "-11 (3)",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/departemental/championnat-masculin-11-32912/poule-197217/"
+    },
+    {
+      "nom": "-18 M CF (Lyon Métropole)",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/national/u18-masculins-2026-2027-32522/poule-190989/",
+      "club": "Lyon Metropole"
+    },
+    {
+      "nom": "-17 M (Entente Est)",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m17-ans-masculin-excellence-aura-30503/poule-190250/",
+      "club": "Lyon Est, Entente Est"
+    },
+    {
+      "nom": "N1 CDF",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/coupe-de-france/coupe-de-france-caisse-d-epargne-federale-masculine-2026-2027-32510/"
+    },
+    {
+      "nom": "N3 F CDF",
+      "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/coupe-de-france/coupe-de-france-caisse-d-epargne-regionale-feminine-2026-2027-32661/"
+    }
+  ],
+  "horaires_corriges": {
+    "2026-11-06|caluire-rillieux handball|st priest handball": "20:30"
+  }
+}
