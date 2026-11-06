@@ -2939,6 +2939,11 @@ def ia_config():
     for m, var in (("gemini", "FFHB_GEMINI_KEY"), ("claude", "FFHB_CLAUDE_KEY")):
         if os.environ.get(var, "").strip():
             ia["cles"][m] = os.environ[var].strip()
+    if os.environ.get("FFHB_IA_MOTEUR", "").strip():
+        ia["moteur"] = os.environ["FFHB_IA_MOTEUR"].strip()
+    for m in ("gemini", "claude"):
+        if os.environ.get(f"FFHB_IA_MODELE_{m.upper()}", "").strip():
+            ia["modeles"][m] = os.environ[f"FFHB_IA_MODELE_{m.upper()}"].strip()
     if ia["moteur"] not in MOTEURS_IA:
         ia["moteur"] = "gemini"
     return ia
@@ -3763,8 +3768,22 @@ function renderArticle(){const o=sec("article");let photos=[];
     ${r.remarques?`<p class="small" style="color:var(--draw)">⚠️ À vérifier : ${esc(r.remarques)}</p>`:""}</div>`}
   catch(e){m.className="small err";m.textContent="Erreur : "+e.message}finally{b.disabled=false;setBusy("article",false,m.className==="small"?"<b>Brouillon d'article créé</b>":"")}};
 }
+function carteGH(){if(!GH)return"";const ok=GHWEB.connecte();
+ return`<div class="card" style="border-color:${ok?"var(--win)":"var(--draw)"}"><h2>Connexion administrateur</h2>
+ <p class="muted small" style="margin:6px 0 10px">${ok?"✅ Ce téléphone / navigateur est connecté : tu peux créer, publier et régler.":"Pour créer des affiches, publier, écrire des articles ou changer les réglages, connecte ce téléphone une fois avec ton <b>jeton GitHub</b> (il reste uniquement dans ce navigateur)."}</p>
+ ${ok?`<div class="bar"><button class="g mini" id="ghout">Déconnecter ce navigateur</button><span class="small muted" id="ghinfo"></span></div>`:`
+ <details><summary style="font-size:14px;color:var(--ink);font-weight:600;margin:0 0 8px">Comment créer le jeton (2 minutes)</summary><ol class="small" style="padding-left:18px;margin:6px 0 10px">
+  <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> (connecté à GitHub).</li>
+  <li><b>Token name</b> : outil-crhb · <b>Expiration</b> : la plus longue proposée (ou « No expiration »).</li>
+  <li><b>Repository access</b> : « Only select repositories » → <b>outil-crhb</b>.</li>
+  <li><b>Permissions</b> → « Repository permissions » : <b>Actions</b>, <b>Contents</b>, <b>Secrets</b> et <b>Variables</b> sur « Read and write ».</li>
+  <li><b>Generate token</b>, copie le texte qui commence par <b>github_pat_</b> et colle-le ci-dessous.</li></ol></details>
+ <div class="bar"><input id="ghtokp" type="password" placeholder="github_pat_..." autocomplete="off" style="flex:1;min-width:200px"><button id="ghin">Connecter</button></div><div id="ghinfo" class="small"></div>`}</div>`}
+function lierGH(){if(!GH)return;const o=$("#ghout");if(o)o.onclick=()=>{GHWEB.deconnecter();init.cfg=0;renderCfg()};
+ const b=$("#ghin");if(b)b.onclick=async()=>{const m=$("#ghinfo");msg(m,"muted",spin+"Vérification…");
+  try{await GHWEB.connecter($("#ghtokp").value.trim());init.cfg=0;renderCfg();toast("<b>Connecté</b> : toutes les fonctions sont disponibles.")}catch(x){msg(m,"err",esc(x.message))}}}
 function renderCfg(){const c=cfg||{club:"",competitions:[]};const w=Object.assign({site:"https://caluirerillieuxhandball.fr",utilisateur:"",mot_de_passe:"",categorie:"Matchs",statut:"draft"},c.wordpress||{});
- sec("cfg").innerHTML=`<div class="card"><h2>Site du club (WordPress)</h2>
+ sec("cfg").innerHTML=carteGH()+`<div class="card"><h2>Site du club (WordPress)</h2>
  <p class="muted small" style="margin:6px 0 0">Mot de passe d'application : dans WordPress, <b>Utilisateurs → Profil → Mots de passe d'application</b>, nom « Outil FFHB », puis <b>Ajouter</b>. Il reste sur ton ordinateur.</p>
  <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px">
   <div><h3>Adresse du site</h3><input id="wsite" value="${esc(w.site)}"></div>
@@ -3784,6 +3803,7 @@ function renderCfg(){const c=cfg||{club:"",competitions:[]};const w=Object.assig
  <div class="card"><h2>Réglages</h2><h3>Club (mots-clés séparés par des virgules)</h3><input id="club" value="${esc(c.club)}">
  <h3>Compétitions (lien d'une page poule ou équipe sur ffhandball.fr)</h3><div id="rows">${c.competitions.map((x,i)=>`<div class="row"><input data-i="${i}" data-k="nom" value="${esc(x.nom)}" placeholder="Nom"><input data-i="${i}" data-k="url" value="${esc(x.url)}" placeholder="https://www.ffhandball.fr/competitions/..."><button class="g" data-del="${i}">✕</button><span></span><input data-i="${i}" data-k="club" value="${esc(x.club||"")}" placeholder="Nom de l'équipe si entente (sinon laisser vide)" style="font-size:13px"><span></span></div>`).join("")}</div>
  <div class="bar"><button class="g" id="add">+ Ajouter</button><button id="save">Enregistrer et lire</button></div></div>`;
+ lierGH();
  const sync=()=>{c.club=$("#club").value;document.querySelectorAll("#rows input").forEach(i=>c.competitions[i.dataset.i][i.dataset.k]=i.value)};
  $("#add").onclick=()=>{sync();c.competitions.push({nom:"",url:""});renderCfg()};
  document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{sync();c.competitions.splice(+b.dataset.del,1);renderCfg()});
@@ -3853,7 +3873,7 @@ function renderAuto(){const o=sec("auto");
    <div><h3>Jeton d'accès</h3><input id="ghtok" type="password" autocomplete="new-password" placeholder="github_pat_..."></div></div>
    <div class="bar" style="margin-top:12px"><button id="ghsave">Enregistrer et tester</button><span id="ghmsg" class="small"></span></div></details></div></div>`;
  const DESC={local:CLOUD?"Le serveur en ligne publie tout seul, même ordinateur éteint. Une publication ratée (serveur arrêté ou en veille) est rattrapée jusqu'au jeudi soir.":"L'ordinateur doit être <b>allumé ou en veille</b> à ces heures (pas éteint) ; l'outil et Chrome n'ont pas besoin d'être ouverts. Une publication ratée parce que l'ordinateur était éteint est rattrapée au prochain démarrage (jusqu'au jeudi soir). Pas de compte GitHub nécessaire.",
-  github:"Publie même quand l'ordinateur est <b>éteint</b>. Demande un dépôt GitHub (déjà préparé dans FFHB_GitHub.zip) et un jeton d'accès."};
+  github:GH?"GitHub publie tout seul sur le site, même ordinateur éteint.":"Publie même quand l'ordinateur est <b>éteint</b>. Demande un dépôt GitHub (déjà préparé dans FFHB_GitHub.zip) et un jeton d'accès."};
  const HEURE={resultats:"Résultats du week-end — chaque <b>mardi à 10 h</b>",programme:"Programme du week-end suivant — chaque <b>mercredi à 18 h</b>"};
  let ou="github";
  const choisir=(v,enreg)=>{ou=v;o.querySelectorAll("[data-ou]").forEach(b=>b.classList.toggle("on",b.dataset.ou===v));$("#oudesc").innerHTML=DESC[v];
@@ -3881,7 +3901,8 @@ function renderAuto(){const o=sec("auto");
     const t=setInterval(async()=>{const r=await api("/api/auto/local");if((r.journal||[]).length>n0||(r.journal[0]&&r.journal[0].date!==(e.journal[0]||{}).date)){clearInterval(t);montrerLoc(r);setBusy("auto",false,"<b>Publication terminée</b>");
       const j=r.journal[0];msg($("#locmsg"),j.ok?"ok":"err",(j.ok?"✅ ":"❌ ")+esc(j.message))}},5000)}
    catch(x){msg(m,"err",esc(x.message));b.disabled=false;setBusy("auto",false)}})};
- api("/api/auto/local").then(e=>{choisir(e.mode_auto==="local"?"local":"github");montrerLoc(e)}).catch(()=>choisir("github"));
+ if(GH){o.querySelector('[data-ou="local"]').style.display="none";const d=$("#ghdet");if(d)d.closest(".card").innerHTML='<p class="small muted" style="margin:0">Connexion à GitHub : <b>Réglages → Connexion administrateur</b>.</p>';setTimeout(()=>choisir("github"))}
+ else api("/api/auto/local").then(e=>{choisir(e.mode_auto==="local"?"local":"github");montrerLoc(e)}).catch(()=>choisir("github"));
  const fdate=d=>d?new Date(d).toLocaleString("fr-FR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
  const RES={success:'<span class="ok">✅ réussie</span>',failure:'<span class="err">❌ échec</span>',cancelled:"annulée",skipped:"ignorée"};
  const montrer=e=>{const c=$("#autoc");
@@ -3915,11 +3936,11 @@ function renderAuto(){const o=sec("auto");
   catch(x){msg(m,"err",esc(x.message))}};
 }
 // ---- ouvrir sur le téléphone ----
-const CLOUD=__CLOUD__;
+const CLOUD=__CLOUD__,GH=typeof window.GHWEB!=="undefined";
 const surTel=CLOUD||!["localhost","127.0.0.1","::1","[::1]"].includes(location.hostname);
 function renderMobile(){const o=sec("mobile");
- if(surTel){o.innerHTML=`<div class="card"><h2>✅ ${CLOUD?"Version en ligne : ouvrable partout, ordinateur éteint":"Tu es sur ton téléphone"}</h2><p class="small">Pour retrouver l'outil en un geste, ajoute-le à l'écran d'accueil :<br>• <b>iPhone (Safari)</b> : bouton Partager <span class="kbd">⬆</span> → « Sur l'écran d'accueil ».<br>• <b>Android (Chrome)</b> : menu <span class="kbd">⋮</span> → « Ajouter à l'écran d'accueil ».</p>
-  <p class="muted small">${CLOUD?"Cette version tourne sur un serveur en ligne : elle s'ouvre partout (Wi-Fi ou 4G), même ordinateur éteint.":"L'outil tourne sur l'ordinateur : il doit être allumé, avec l'outil ouvert, et le téléphone sur le même Wi-Fi."}</p></div>`;return}
+ if(surTel||GH){o.innerHTML=`<div class="card"><h2>✅ ${CLOUD||GH?"Version en ligne : ouvrable partout, ordinateur éteint":"Tu es sur ton téléphone"}</h2><p class="small">Pour retrouver l'outil en un geste, ajoute-le à l'écran d'accueil :<br>• <b>iPhone (Safari)</b> : bouton Partager <span class="kbd">⬆</span> → « Sur l'écran d'accueil ».<br>• <b>Android (Chrome)</b> : menu <span class="kbd">⋮</span> → « Ajouter à l'écran d'accueil ».</p>
+  <p class="muted small">${GH?"Cette version tourne sur GitHub : elle s'ouvre partout (Wi-Fi ou 4G), même ordinateur éteint. Les actions (affiche, article, publication…) prennent 2 à 3 minutes, le temps que GitHub fasse le travail.":CLOUD?"Cette version tourne sur un serveur en ligne : elle s'ouvre partout (Wi-Fi ou 4G), même ordinateur éteint.":"L'outil tourne sur l'ordinateur : il doit être allumé, avec l'outil ouvert, et le téléphone sur le même Wi-Fi."}</p></div>`;return}
  o.innerHTML=`<div class="card"><div class="loader"><div class="spin"></div>Chargement…</div></div>`;
  const montrer=e=>{o.innerHTML=`<div class="card"><div class="autol" style="padding-top:0"><label class="sw"><input type="checkbox" id="mact" ${e.actif?"checked":""}><i></i><span><b>Accès depuis le téléphone</b> · <span class="small">${e.actif?'<span class="ok">activé</span>':'<span class="muted">désactivé</span>'}</span><br><span class="small muted">Le téléphone doit être sur le <b>même Wi-Fi</b> que cet ordinateur, et l'outil ouvert ici.</span></span></label></div>
   ${e.erreur?`<p class="err small">${esc(e.erreur)}</p>`:""}

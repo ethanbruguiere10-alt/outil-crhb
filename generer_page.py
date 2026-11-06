@@ -1,90 +1,180 @@
 # -*- coding: utf-8 -*-
-"""Prépare les données de la page en ligne « CRHB Week-end » (résultats, programme, visuels, textes).
-Lancé automatiquement par une tâche planifiée Claude : lit la FFHB, crée les visuels et écrit
-le dossier page_en_ligne/ (donnees.json + visuels/*.png) à publier sur la page."""
+"""Construit la version GitHub de l'outil CRHB (même page que sur l'ordinateur) dans le dossier « site ».
+- python generer_page.py --complet        : tout (lancé chaque jour et après un changement de réglages)
+- utilisé aussi par actions_github.py pour ne refaire que ce qu'une action a changé.
+Les données sont écrites dans site/data/*.json, les images dans site/visuels/."""
 import json
 import os
 import shutil
 import sys
-from datetime import date, datetime
+from datetime import datetime
 
 ICI = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, ICI)
 import ffhb_resultats as f  # noqa: E402
 
-SORTIE = os.path.join(ICI, "page_en_ligne")
+SITE = os.environ.get("FFHB_SITE") or os.path.join(ICI, "site")
+DATA = os.path.join(SITE, "data")
+VIS = os.path.join(SITE, "visuels")
+SEMAINES = list(range(4, -4, -1))          # 4 week-ends passés … 3 à venir (0 = ce week-end / le dernier)
+VISUELS_AUTO = (1, 0, -1)                  # visuels créés d'avance (les autres : à la demande)
+SECRETS = (("wordpress", "mot_de_passe"), ("github", "jeton"), ("claude", "cle"))
 
 
-def semaines():
-    """Quel week-end pour les résultats et lequel pour le programme, selon le jour."""
-    j = date.today().weekday()          # 0 = lundi
-    if j <= 3:
-        return 0, -1                    # lun-jeu : week-end passé / week-end suivant
-    if j == 4:
-        return 1, 0                     # vendredi : week-end passé / ce week-end
-    return 0, 0                         # sam-dim : ce week-end (scores au fil de l'eau)
+def _ecrire(rel, obj):
+    p = os.path.join(DATA, rel)
+    os.makedirs(os.path.dirname(p), exist_ok=True)
+    with open(p, "w", encoding="utf-8") as fh:
+        json.dump(obj, fh, ensure_ascii=False, default=str)
 
 
-def matchs(res, mode):
-    out = []
-    for m in f.matchs_pour_visuel(res, mode):
-        out.append({k: m.get(k) for k in ("categorie", "groupe_nom", "lieu", "salle", "jour", "dom", "ext",
-                                           "sd", "se", "res", "heure", "date")})
-    return out
+def _lire(rel):
+    try:
+        with open(os.path.join(DATA, rel), encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return None
 
 
-def main():
+def _copier_visuel(chemin, nom=None):
+    os.makedirs(VIS, exist_ok=True)
+    nom = nom or os.path.basename(chemin)
+    shutil.copy(chemin, os.path.join(VIS, nom))
+    return nom
+
+
+def config_publique():
+    c = f.load_config()
+    for sec, cle in SECRETS:
+        if (c.get(sec) or {}).get(cle):
+            c[sec][cle] = ""
+    if (c.get("ia") or {}).get("cles"):
+        c["ia"]["cles"] = {k: "" for k in c["ia"]["cles"]}
+    c.pop("acces_mobile", None)
+    return c
+
+
+def page():
+    """La page de l'outil, adaptée à GitHub (chemins relatifs + module GitHub)."""
+    html = f.PAGE.replace("__CLOUD__", "false", 1)
+    html = html.replace('"/api/', '"api/').replace("`/api/", "`api/").replace("'/api/", "'api/") \
+               .replace('="/api/', '="api/').replace('"/logo.png"', '"logo.png"').replace('href="/logo.png"', 'href="logo.png"')
+    html = html.replace("/api/", "api/").replace("/logo.png", "logo.png")
+    module = open(os.path.join(ICI, "page", "gh.js"), encoding="utf-8").read()
+    html = html.replace("<script>", "<script>\n" + module + "\n</script>\n<script>", 1)
+    os.makedirs(SITE, exist_ok=True)
+    with open(os.path.join(SITE, "index.html"), "w", encoding="utf-8") as fh:
+        fh.write(html)
+    shutil.copy(os.path.join(ICI, "page", "sw.js"), os.path.join(SITE, "sw.js"))
+    shutil.copy(os.path.join(f.CHARTE_DIR, "logo.png"), os.path.join(SITE, "logo.png"))
+    open(os.path.join(SITE, ".nojekyll"), "w").close()
+
+
+def semaines(force=True):
     cfg = f.load_config()
     keys = f.club_keys(cfg)
-    off_res, off_prog = semaines()
-    print("Lecture de la FFHB…", flush=True)
-    r_res = f.run_all(cfg, off_res, force=True)
-    r_prog = r_res if off_prog == off_res else f.run_all(cfg, off_prog)
-    if os.path.isdir(SORTIE):
-        shutil.rmtree(SORTIE)
-    os.makedirs(os.path.join(SORTIE, "visuels"))
-    donnees = {"genere": datetime.now().strftime("%Y-%m-%dT%H:%M"), "club": cfg.get("club", ""),
-               "controle": r_res.get("controle"), "semaines": {}}
-    for cle, res, mode in (("resultats", r_res, "resultats"), ("programme", r_prog, "programme")):
-        print(f"Visuels {mode}…", flush=True)
-        fichiers = []
-        try:
-            for i, p in enumerate(f.generer_visuels(res, mode, theme="bleu"), 1):
-                nom = f"{mode}_{res['du']}_{i}.png"
-                shutil.copy(p, os.path.join(SORTIE, "visuels", nom))
-                fichiers.append("visuels/" + nom)
-        except Exception as e:
-            print("Visuels impossibles :", e)
-        ms = matchs(res, mode)
-        texte = f.texte_programme(res, keys) if mode == "programme" else f.texte_reseaux(dict(res, offset=0), keys)
-        donnees["semaines"][cle] = {"du": res["du"], "au": res["au"],
-                                    "dates": f.titre_dates(res["du"], res["au"], ms) if ms else "",
-                                    "matchs": ms, "visuels": fichiers, "texte": texte}
-    # affiches du prochain match de N1 à domicile (championnat et Coupe de France)
-    donnees["affiches"] = []
-    os.makedirs(os.path.join(SORTIE, "affiches"), exist_ok=True)
+    res_par_off = {}
+    for i, off in enumerate(SEMAINES):
+        print(f"Week-end {off}…", flush=True)
+        res = f.run_all(cfg, off, force=force and i == 0)
+        res = json.loads(json.dumps(res, default=str))
+        res["texte"] = f.texte_reseaux(res, keys)
+        res.update(maj_en_cours=False, salles_en_cours=False, progression={"total": 0, "lus": 0})
+        _ecrire(f"res_{off}.json", res)
+        os.makedirs(DATA, exist_ok=True)
+        with open(os.path.join(DATA, f"csv_{off}.csv"), "w", encoding="utf-8") as fh:
+            fh.write(f.to_csv(res))
+        res_par_off[off] = res
+    return res_par_off
+
+
+def visuels(off, mode, theme, res=None):
+    if res is None:
+        res = f.run_all(f.load_config(), off)
+    noms = [_copier_visuel(p, f"{mode}_{theme}_{res['du']}_{i}.png")
+            for i, p in enumerate(f.generer_visuels(res, mode, theme=theme), 1)]
+    _ecrire(f"visuels_{off}_{mode}_{theme}.json", {"fichiers": noms, "dossier": "GitHub (site)"})
+    return noms
+
+
+def affiches():
+    etat = f._etat_affiche()
     for t in ("n1", "cdf"):
         try:
-            info = f.prochain_match_affiche(cfg, type_affiche=t, relire=False)
+            info = f.prochain_match_affiche(type_affiche=t, relire=False)
             jour = info["n1"][3]["date"]
+            prec = (etat.get("dernieres_affiches") or {}).get(t) or {}
             photos = sorted(x for x in os.listdir(f._dossier_photos()) if x.lower().endswith((".jpg", ".jpeg", ".png")))
-            # même photo à chaque mise à jour pour un même match (sauf photo validée dans l'outil)
-            photo = f.photo_validee(jour) or (photos[sum(map(ord, jour + t)) % len(photos)] if photos else None)
+            photo = (prec.get("photo") if prec.get("date") == jour else None) \
+                or (os.path.basename(f.photo_validee(jour)) if f.photo_validee(jour) else None) \
+                or (photos[sum(map(ord, jour + t)) % len(photos)] if photos else None)
             print(f"Affiche {t}…", flush=True)
-            chemin, det = f.generer_affiche(info, type_affiche=t, photo=os.path.basename(photo) if photo else None, relire=False)
-            el = {"type": det.get("type_nom"), "match": det["match"], "date": det["date"], "heure": det.get("heure"),
-                  "salle": det.get("salle"), "tour": det.get("tour"), "journee": det.get("journee")}
-            for k, nom in (("fichier", f"affiche_{t}.png"), ("fichier_a4", f"affiche_{t}_A4.png"), ("fichier_pdf", f"affiche_{t}_A4.pdf")):
-                if det.get(k):
-                    shutil.copy(os.path.join(det["dossier"], det[k]), os.path.join(SORTIE, "affiches", nom))
-                    el[k] = "affiches/" + nom
-            donnees["affiches"].append(el)
+            _, det = f.generer_affiche(info, type_affiche=t, photo=photo, relire=False)
+            publier_affiche(det)
         except Exception as e:
             print(f"Pas d'affiche {t} :", e)
-    with open(os.path.join(SORTIE, "donnees.json"), "w", encoding="utf-8") as fh:
-        json.dump(donnees, fh, ensure_ascii=False, indent=1)
-    print("OK :", {k: (len(v["matchs"]), len(v["visuels"])) for k, v in donnees["semaines"].items()})
+            _ecrire(f"affiche_{t}.json", {})
+
+
+def publier_affiche(det):
+    for k in ("fichier", "fichier_a4", "fichier_pdf"):
+        if det.get(k):
+            _copier_visuel(os.path.join(det["dossier"], det[k]))
+    det = dict(det, dossier="GitHub (site)")
+    _ecrire(f"affiche_{det.get('type', 'n1')}.json", det)
+    return det
+
+
+def articles():
+    try:
+        _ecrire("articles.json", {"articles": f.wp_articles()})
+    except Exception as e:
+        _ecrire("articles.json", {"erreur": str(e)})
+
+
+def ecran(r=None):
+    r = r or (f._etat_affiche().get("ecran") or {})
+    for v in r.get("videos") or []:
+        for k in ("fichier", "apercu"):
+            if v.get(k) and os.path.exists(os.path.join(f.VISUELS_DIR, v[k])):
+                _copier_visuel(os.path.join(f.VISUELS_DIR, v[k]))
+    _ecrire("ecran.json", dict(r, dossier="GitHub (site)"))
+
+
+def version(action_id=None, complet=False):
+    v = _lire("version.json") or {}
+    actions = (v.get("actions") or [])[-30:]
+    if action_id:
+        actions.append(action_id)
+    v = {"build": datetime.now().strftime("%Y%m%d%H%M%S"), "genere": datetime.now().strftime("%d/%m/%Y %H:%M"),
+         "actions": actions, "complet": v.get("complet") if not complet else datetime.now().strftime("%d/%m/%Y %H:%M")}
+    _ecrire("version.json", v)
+
+
+def complet():
+    if os.path.isdir(VIS):
+        shutil.rmtree(VIS)       # on repart propre (les anciens week-ends disparaissent)
+    os.makedirs(DATA, exist_ok=True)
+    for x in os.listdir(DATA):
+        if x.startswith("visuels_"):
+            os.remove(os.path.join(DATA, x))
+    page()
+    _ecrire("config.json", config_publique())
+    res = semaines(force=True)
+    for off in VISUELS_AUTO:
+        for mode in ("resultats", "programme"):
+            for theme in ("bleu", "jaune"):
+                try:
+                    print(f"Visuels {off} {mode} {theme}…", flush=True)
+                    visuels(off, mode, theme, res[off])
+                except Exception as e:
+                    print("Visuels impossibles :", e)
+    affiches()
+    ecran()
+    articles()
+    version(complet=True)
 
 
 if __name__ == "__main__":
-    main()
+    complet()
+    print("Site prêt :", SITE)
