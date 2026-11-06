@@ -1,0 +1,86 @@
+name: Page CRHB (mise à jour quotidienne)
+
+on:
+  schedule:
+    # tous les jours vers 8h45 et 21h45 (heure de Paris en hiver ; 9h45 / 22h45 en été)
+    - cron: "43 7,20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: site
+  cancel-in-progress: false
+
+jobs:
+  page:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    env:
+      TZ: Europe/Paris
+      FFHB_SITE: site
+      FFHB_WP_SITE: ${{ secrets.FFHB_WP_SITE }}
+      FFHB_WP_USER: ${{ secrets.FFHB_WP_USER }}
+      FFHB_WP_PASSWORD: ${{ secrets.FFHB_WP_PASSWORD }}
+      FFHB_WP_STATUT: ${{ vars.FFHB_WP_STATUT || 'draft' }}
+      FFHB_GEMINI_KEY: ${{ secrets.FFHB_GEMINI_KEY }}
+      FFHB_CLAUDE_KEY: ${{ secrets.FFHB_CLAUDE_KEY }}
+      FFHB_IA_MOTEUR: ${{ vars.FFHB_IA_MOTEUR }}
+      FFHB_IA_MODELE_GEMINI: ${{ vars.FFHB_IA_MODELE_GEMINI }}
+      FFHB_IA_MODELE_CLAUDE: ${{ vars.FFHB_IA_MODELE_CLAUDE }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-v1
+      - name: Installation
+        run: |
+          pip install -q -r requirements.txt
+          python -m playwright install --with-deps chromium > /dev/null
+          sudo apt-get install -y -qq ffmpeg > /dev/null || true
+      - name: Récupération du site actuel
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git clone -q --depth 1 --branch site "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" site || mkdir -p site
+          rm -rf site/.git
+      - name: Lecture FFHB, visuels et affiches
+        run: python actions_github.py reconstruire "{}"
+      - name: Enregistrement (réglages, logos, résultats)
+        env:
+          ACTION: mise à jour quotidienne
+        run: |
+          git config user.name "Outil CRHB"
+          git config user.email "actions@users.noreply.github.com"
+          for p in ffhb_config.json ffhb_affiche.json ffhb_wordpress.json affiche etat_web entrees; do git add -A -- "$p" 2>/dev/null || true; done
+          if ! git diff --cached --quiet; then
+            git commit -q -m "Outil CRHB : $ACTION"
+            git pull -q --rebase || true
+            git push -q
+          fi
+      - name: Sauvegarde du site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd site
+          git init -q -b site
+          git add -A
+          git -c user.name="Outil CRHB" -c user.email="actions@users.noreply.github.com" commit -q -m "site"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deploiement
+        uses: actions/deploy-pages@v4
