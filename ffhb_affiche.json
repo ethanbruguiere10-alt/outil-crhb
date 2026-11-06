@@ -1,0 +1,127 @@
+{
+ "derniere_affiche": {
+  "match": "CALUIRE-RILLIEUX HANDBALL – ST PRIEST HANDBALL",
+  "date": "2026-11-06",
+  "heure": "20:30",
+  "dom": "CALUIRE-RILLIEUX HANDBALL",
+  "ext": "ST PRIEST HANDBALL",
+  "heure_corrigee": true,
+  "salle": "SALLE LUCIEN LACHAISE",
+  "journee": null,
+  "photo": "14_IMG_1277.jpg",
+  "lu_a": "16:32",
+  "ouverture": null,
+  "logos_manquants": [],
+  "partenaire": null,
+  "photo_validee": false,
+  "type": "cdf",
+  "type_nom": "N1 – Coupe de France",
+  "tour": "2e tour",
+  "infos": {
+   "texte": "",
+   "image": null
+  },
+  "equipes": [
+   {
+    "nom": "CALUIRE-RILLIEUX HANDBALL",
+    "logo": true,
+    "club": true
+   },
+   {
+    "nom": "ST PRIEST HANDBALL",
+    "logo": true,
+    "club": false
+   }
+  ],
+  "fichier": "affiche_CDF_2026-11-06_163208.png",
+  "fichier_a4": "affiche_CDF_2026-11-06_163208_A4.png",
+  "fichier_pdf": "affiche_CDF_2026-11-06_163208_A4.pdf",
+  "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
+ },
+ "dernieres_affiches": {
+  "n1": {
+   "match": "CALUIRE-RILLIEUX HANDBALL – VILLEMOMBLE HB",
+   "date": "2026-11-21",
+   "heure": "20:30",
+   "dom": "CALUIRE-RILLIEUX HANDBALL",
+   "ext": "VILLEMOMBLE HB",
+   "heure_corrigee": false,
+   "salle": "SALLE LUCIEN LACHAISE",
+   "journee": 8,
+   "photo": "14_IMG_1277.jpg",
+   "lu_a": "16:31",
+   "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – ST CHAMOND HANDBALL PAYS DU GIER à 18:00",
+   "logos_manquants": [],
+   "partenaire": "oscar-b-studio.png",
+   "photo_validee": false,
+   "type": "n1",
+   "type_nom": "Nationale 1 (championnat)",
+   "tour": null,
+   "infos": {
+    "texte": "",
+    "image": null
+   },
+   "equipes": [
+    {
+     "nom": "CALUIRE-RILLIEUX HANDBALL",
+     "logo": true,
+     "club": true
+    },
+    {
+     "nom": "VILLEMOMBLE HB",
+     "logo": true,
+     "club": false
+    },
+    {
+     "nom": "ST CHAMOND HANDBALL PAYS DU GIER",
+     "logo": true,
+     "club": false,
+     "ouverture": true
+    }
+   ],
+   "fichier": "affiche_N1_2026-11-21_163159.png",
+   "fichier_a4": "affiche_N1_2026-11-21_163159_A4.png",
+   "fichier_pdf": "affiche_N1_2026-11-21_163159_A4.pdf",
+   "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
+  },
+  "cdf": {
+   "match": "CALUIRE-RILLIEUX HANDBALL – ST PRIEST HANDBALL",
+   "date": "2026-11-06",
+   "heure": "20:30",
+   "dom": "CALUIRE-RILLIEUX HANDBALL",
+   "ext": "ST PRIEST HANDBALL",
+   "heure_corrigee": true,
+   "salle": "SALLE LUCIEN LACHAISE",
+   "journee": null,
+   "photo": "14_IMG_1277.jpg",
+   "lu_a": "16:32",
+   "ouverture": null,
+   "logos_manquants": [],
+   "partenaire": null,
+   "photo_validee": false,
+   "type": "cdf",
+   "type_nom": "N1 – Coupe de France",
+   "tour": "2e tour",
+   "infos": {
+    "texte": "",
+    "image": null
+   },
+   "equipes": [
+    {
+     "nom": "CALUIRE-RILLIEUX HANDBALL",
+     "logo": true,
+     "club": true
+    },
+    {
+     "nom": "ST PRIEST HANDBALL",
+     "logo": true,
+     "club": false
+    }
+   ],
+   "fichier": "affiche_CDF_2026-11-06_163208.png",
+   "fichier_a4": "affiche_CDF_2026-11-06_163208_A4.png",
+   "fichier_pdf": "affiche_CDF_2026-11-06_163208_A4.pdf",
+   "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
+  }
+ }
+}
