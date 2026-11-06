@@ -1,0 +1,69 @@
+name: Publication automatique FFHB
+
+on:
+  schedule:
+    # Mardi 10h (Paris) : résultats du week-end passé  — 08h UTC en été, 09h UTC en hiver
+    - cron: "0 8,9 * * 2"
+    # Mercredi 18h (Paris) : programme du week-end suivant — 16h UTC en été, 17h UTC en hiver
+    - cron: "0 16,17 * * 3"
+  workflow_dispatch:            # bouton « Run workflow » pour lancer à la main
+    inputs:
+      mode:
+        description: "Quel article ?"
+        type: choice
+        options: [resultats, programme]
+        default: resultats
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      # Interrupteurs « activé / désactivé » réglés depuis l'outil (variables FFHB_AUTO_RESULTATS / FFHB_AUTO_PROGRAMME)
+      - name: Vérification (automatisation activée ?)
+        id: check
+        env:
+          AUTO_RES: ${{ vars.FFHB_AUTO_RESULTATS || 'on' }}
+          AUTO_PROG: ${{ vars.FFHB_AUTO_PROGRAMME || 'on' }}
+        run: |
+          go=oui
+          if [ "${{ github.event_name }}" = "schedule" ]; then
+            if [ "${{ github.event.schedule }}" = "0 8,9 * * 2" ]; then etat="$AUTO_RES"; quoi="résultats"; else etat="$AUTO_PROG"; quoi="programme"; fi
+            if [ "$etat" = "off" ]; then go=non; echo "Publication automatique du $quoi désactivée dans l'outil : rien à faire."; fi
+          fi
+          echo "go=$go" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        if: steps.check.outputs.go == 'oui'
+      - uses: actions/setup-python@v5
+        if: steps.check.outputs.go == 'oui'
+        with:
+          python-version: "3.12"
+      - name: Installation
+        if: steps.check.outputs.go == 'oui'
+        run: |
+          pip install -r requirements.txt
+          python -m playwright install --with-deps chromium
+      - name: Publication
+        if: steps.check.outputs.go == 'oui'
+        env:
+          FFHB_WP_SITE: ${{ secrets.FFHB_WP_SITE }}
+          FFHB_WP_USER: ${{ secrets.FFHB_WP_USER }}
+          FFHB_WP_PASSWORD: ${{ secrets.FFHB_WP_PASSWORD }}
+          FFHB_WP_STATUT: ${{ vars.FFHB_WP_STATUT || 'draft' }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            python ffhb_resultats.py --auto "${{ inputs.mode }}"
+          elif [ "${{ github.event.schedule }}" = "0 8,9 * * 2" ]; then
+            python ffhb_resultats.py --auto resultats --heure-paris 10
+          else
+            python ffhb_resultats.py --auto programme --heure-paris 18
+          fi
+      - name: Visuels générés (téléchargeables)
+        if: always() && steps.check.outputs.go == 'oui'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visuels-${{ github.run_number }}
+          path: |
+            visuels/
+            ffhb_debug/resultat.json
+          if-no-files-found: ignore
