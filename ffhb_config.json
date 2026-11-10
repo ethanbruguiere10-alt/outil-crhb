@@ -1,5 +1,5 @@
 {
-  "version": 6,
+  "version": 7,
   "club": "Caluire, Rillieux",
   "competitions": [
     {
@@ -80,9 +80,9 @@
       "club": "Lyon Metropole"
     },
     {
-      "nom": "-17 M (Entente Est)",
+      "nom": "-17 M (Lyon Métropole)",
       "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m17-ans-masculin-excellence-aura-30503/poule-190250/",
-      "club": "Lyon Est, Entente Est"
+      "club": "Lyon Metropole"
     },
     {
       "nom": "N1 CDF",
