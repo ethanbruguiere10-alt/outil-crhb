@@ -49,7 +49,7 @@ PORT = 8765
 CLOUD = os.environ.get("FFHB_CLOUD") == "1"   # version en ligne (Hugging Face) : voir le dossier « en_ligne »
 PORT_MOBILE = 8766   # accès depuis le téléphone (même Wi-Fi)
 
-CONFIG_VERSION = 6
+CONFIG_VERSION = 7
 # anciens liens remplacés automatiquement
 URL_REMPLACEES = {
     "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m15-ans-feminin-division-2-aura-30519/": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m15-ans-feminin-division-2-aura-30519/poule-196652/",
@@ -78,7 +78,7 @@ DEFAULT_CONFIG = {
         {"nom": "-11 (2)", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/departemental/championnat-masculin-11-32912/poule-197211/"},
         {"nom": "-11 (3)", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/departemental/championnat-masculin-11-32912/poule-197217/"},
         {"nom": "-18 M CF (Lyon Métropole)", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/national/u18-masculins-2026-2027-32522/poule-190989/", "club": "Lyon Metropole"},
-        {"nom": "-17 M (Entente Est)", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m17-ans-masculin-excellence-aura-30503/poule-190250/", "club": "Lyon Est, Entente Est"},
+        {"nom": "-17 M (Lyon Métropole)", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/regional/m17-ans-masculin-excellence-aura-30503/poule-190250/", "club": "Lyon Metropole"},
         # Coupes de France : lien de la coupe (sans poule) ; l'outil lit chaque tour (1er tour, 2e tour...)
         {"nom": "N1 CDF", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/coupe-de-france/coupe-de-france-caisse-d-epargne-federale-masculine-2026-2027-32510/"},
         {"nom": "N3 F CDF", "url": "https://www.ffhandball.fr/competitions/saison-2026-2027-22/coupe-de-france/coupe-de-france-caisse-d-epargne-regionale-feminine-2026-2027-32661/"},
@@ -235,6 +235,10 @@ def load_config():
                 cfg["competitions"] += [c for c in DEFAULT_CONFIG["competitions"] if c["url"].rstrip("/") not in known]
                 for c in cfg["competitions"]:   # v6 : noms des coupes
                     c["nom"] = NOMS_REMPLACES.get(c.get("nom", ""), c.get("nom", ""))
+                for c in cfg["competitions"]:   # v7 : en -17 M, notre entente est celle de Lyon Métropole
+                    if "m17-ans-masculin" in c.get("url", "") and "entente est" in (c.get("club") or "").lower():
+                        c["club"] = "Lyon Metropole"
+                        c["nom"] = "-17 M (Lyon Métropole)"
                 cfg["version"] = CONFIG_VERSION
                 save_config(cfg)
             return cfg
@@ -1538,6 +1542,19 @@ def texte_programme(res, keys):
 def texte_reseaux(res, keys):
     if res.get("offset", 0) < 0:
         return texte_programme(res, keys)
+    return texte_resultats(res, keys)
+
+
+def textes_reseaux(res, keys):
+    """Les deux textes (résultats et programme) du week-end affiché."""
+    try:
+        prog = texte_programme(res, keys)
+    except Exception:
+        prog = "Programme indisponible."
+    return {"texte": texte_reseaux(res, keys), "texte_resultats": texte_resultats(res, keys), "texte_programme": prog}
+
+
+def texte_resultats(res, keys):
     fri, sun = date.fromisoformat(res["du"]), date.fromisoformat(res["au"])
     L = [f"🤾 Résultats du week-end ({fri:%d/%m} → {sun:%d/%m})", ""]
     groupe = None
@@ -2923,6 +2940,11 @@ class IAErreur(Exception):
     pass
 
 
+class IASurcharge(IAErreur):
+    """Service momentanément saturé (503/500) ou limite du modèle atteinte (429) : on peut réessayer ou changer de modèle."""
+    pass
+
+
 ClaudeErreur = IAErreur  # ancien nom
 
 
@@ -2994,18 +3016,22 @@ def _gemini(methode, chemin, donnees=None, cle=None, timeout=120):
         if e.code in (400, 401, 403) and ("api key" in m or "api_key" in m or "permission" in m or e.code != 400):
             raise IAErreur("clé API Gemini refusée : vérifie-la dans Réglages (aistudio.google.com > Get API key).")
         if e.code == 429:
-            raise IAErreur("limite gratuite de Gemini atteinte pour le moment : réessaie dans une minute (ou demain si c'est la limite du jour).")
-        if e.code in (500, 503):
-            raise IAErreur("Gemini est surchargé : réessaie dans quelques minutes.")
+            raise IASurcharge("limite gratuite de Gemini atteinte pour le moment : réessaie dans une minute (ou demain si c'est la limite du jour).")
+        if e.code in (500, 502, 503, 504):
+            raise IASurcharge("Gemini est surchargé : réessaie dans quelques minutes.")
         if e.code == 404:
             raise IAErreur("modèle Gemini introuvable : laisse le champ « Modèle » vide dans Réglages.")
         raise IAErreur(f"Gemini : erreur {e.code}" + (f" : {e.msg}" if e.msg else ""))
 
 
-def gemini_modele(cle=None):
-    choisi = ia_config()["modeles"].get("gemini")
-    if choisi:
-        return choisi
+_GEMINI_NOMS = {}
+
+
+def gemini_noms(cle=None):
+    """Modèles Gemini disponibles avec la clé (gardés en mémoire)."""
+    k = cle or "defaut"
+    if k in _GEMINI_NOMS:
+        return _GEMINI_NOMS[k]
     noms = []
     page = ""
     for _ in range(5):
@@ -3016,6 +3042,46 @@ def gemini_modele(cle=None):
         page = r.get("nextPageToken")
         if not page:
             break
+    _GEMINI_NOMS[k] = noms
+    return noms
+
+
+def gemini_modeles_secours(principal):
+    """Autres modèles à essayer si le premier est saturé (du plus capable au plus léger)."""
+    try:
+        noms = gemini_noms()
+    except IAErreur:
+        noms = []
+    voulus = ["gemini-flash-latest", "gemini-2.5-flash", "gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+    out = [principal] + [n for n in voulus if n in noms and n != principal]
+    if len(out) == 1:      # liste illisible : on tente quand même les noms habituels
+        out += [n for n in voulus if n != principal][:3]
+    return out
+
+
+def _reduire_image(d, cote=1280, qualite=82):
+    """Photo envoyée à l'IA : réduite (plus rapide, et Gemini sature moins)."""
+    try:
+        import base64
+        from PIL import Image
+        t, b = _b64_image(d)
+        im = Image.open(io.BytesIO(base64.b64decode(b)))
+        if max(im.size) <= cote and len(b) < 700_000:
+            return d
+        im = im.convert("RGB")
+        im.thumbnail((cote, cote))
+        buf = io.BytesIO()
+        im.save(buf, "JPEG", quality=qualite)
+        return "data:image/jpeg;base64," + base64.b64encode(buf.getvalue()).decode()
+    except Exception:
+        return d
+
+
+def gemini_modele(cle=None):
+    choisi = ia_config()["modeles"].get("gemini")
+    if choisi:
+        return choisi
+    noms = gemini_noms(cle)
     if "gemini-flash-latest" in noms:
         return "gemini-flash-latest"
     exclus = ("lite", "preview", "exp", "tts", "image", "audio", "live", "thinking", "8b", "embedding", "native")
@@ -3039,12 +3105,33 @@ def _b64_image(d):
 
 
 def gemini_generer(systeme, texte, images=()):
-    modele = gemini_modele()
+    images = [_reduire_image(i) for i in images]
     parts = [{"inline_data": {"mime_type": t, "data": b}} for t, b in map(_b64_image, images)] + [{"text": texte}]
-    r = _gemini("POST", f"models/{modele}:generateContent", {
-        "systemInstruction": {"parts": [{"text": systeme}]},
-        "contents": [{"role": "user", "parts": parts}],
-        "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}}, timeout=180)
+    corps = {"systemInstruction": {"parts": [{"text": systeme}]},
+             "contents": [{"role": "user", "parts": parts}],
+             "generationConfig": {"temperature": 0.7, "responseMimeType": "application/json"}}
+    # Gemini est souvent saturé : on réessaie, puis on passe à un autre modèle (plus léger) avant d'abandonner
+    r, derniere = None, None
+    for modele in gemini_modeles_secours(gemini_modele()):
+        for attente in (0, 4, 10):
+            if attente:
+                time.sleep(attente)
+            try:
+                r = _gemini("POST", f"models/{modele}:generateContent", corps, timeout=180)
+                break
+            except IASurcharge as e:
+                derniere = e
+                if "limite" in str(e):
+                    break          # quota de ce modèle épuisé : modèle suivant tout de suite
+            except IAErreur as e:
+                if "introuvable" in str(e):
+                    derniere = e
+                    break
+                raise
+        if r is not None:
+            break
+    if r is None:
+        raise derniere or IAErreur("Gemini ne répond pas : réessaie dans quelques minutes.")
     cands = r.get("candidates") or []
     if not cands:
         raise IAErreur("Gemini n'a pas répondu (texte bloqué par ses filtres ?). Reformule un peu et réessaie.")
@@ -3261,7 +3348,7 @@ def creer_article(texte, type_article="match", categorie_id=None, photos=(), cou
         article["categories"] = [cat]
     post = wp_requete(wp, "POST", "posts", article)
     return {"titre": art["titre"], "extrait": art.get("extrait", ""), "blocs": art["blocs"], "remarques": art.get("remarques", ""),
-            "visuel": art.get("visuel") or {}, "couverture": couv_fichier,
+            "visuel": art.get("visuel") or {}, "couverture": couv_fichier, "couverture_url": (couv or {}).get("url", ""),
             "modele": art["modele"], "images": len(medias), "statut": post.get("status"),
             "edition": wp["site"].rstrip("/") + f"/wp-admin/post.php?post={post['id']}&action=edit",
             "apercu": post.get("link"), "id": post["id"]}
@@ -3592,8 +3679,9 @@ function renderMatchs(v){const o=sec(v);
     `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.nom)}</a>`).join(" · ")}</p></div>`:"")}
 // ---- texte réseaux ----
 function renderPost(){const o=sec("post");
- o.innerHTML=`<div class="card"><div class="head"><h2>Texte prêt à publier</h2><div class="bar" style="margin:0"><button class="g" id="cp">Copier</button><a class="btn g" href="/api/csv?offset=${offset}">Export CSV</a></div></div><pre id="posttxt">${esc(data.texte)}</pre></div>`;
- $("#cp").onclick=()=>navigator.clipboard.writeText($("#posttxt").textContent).then(()=>{$("#cp").textContent="Copié ✓";setTimeout(()=>{const b=$("#cp");if(b)b.textContent="Copier"},2000)})}
+ const T=[["res","Résultats du week-end",data.texte_resultats??data.texte],["prog","Programme du week-end",data.texte_programme??""]];
+ o.innerHTML=T.map(([k,t,x])=>`<div class="card"><div class="head"><h2>${t}</h2><div class="bar" style="margin:0"><button class="g" data-cp="${k}">Copier</button>${k==="res"?`<a class="btn g" href="/api/csv?offset=${offset}">Export CSV</a>`:""}</div></div><pre id="posttxt_${k}">${esc(x||"")}</pre></div>`).join("");
+ o.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>navigator.clipboard.writeText($("#posttxt_"+b.dataset.cp).textContent).then(()=>{b.textContent="Copié ✓";setTimeout(()=>{b.textContent="Copier"},2000)}))}
 // ---- visuels (gardés en mémoire : changer d'onglet ne les recrée pas) ----
 const vcache={};
 function renderVisuel(){const o=sec("visuel");
@@ -3763,7 +3851,7 @@ function renderArticle(){const o=sec("article");let photos=[];
        q.visible===false?`<span class="err">⚠️ n'apparaît pas sur la page <a href="${esc(q.page_actualites)}" target="_blank" rel="noopener">Actualités</a> : vérifie le bloc de la page Actualités dans WordPress.</span>`:
        `vérifie la page <a href="${esc(q.page_actualites)}" target="_blank" rel="noopener">Actualités</a>`)}
     catch(e){m.className="small err";m.textContent="Erreur : "+e.message}};
-   $("#ares").innerHTML=(r.couverture?`<div style="margin-top:12px"><div class="muted small" style="margin-bottom:4px">Image à la une créée :</div><img src="/api/visuel.png?f=${encodeURIComponent(r.couverture)}&t=${Date.now()}" style="width:100%;max-width:600px;border-radius:8px;border:1px solid var(--line)"></div>`:"")+`<div class="card" style="margin-top:12px;background:var(--soft)"><h2>${esc(r.titre)}</h2><p class="muted small" style="margin:4px 0 10px">${esc(r.extrait)}</p>
+   $("#ares").innerHTML=(r.couverture?`<div style="margin-top:12px"><div class="muted small" style="margin-bottom:4px">Image à la une créée :</div><img src="${r.couverture_url?esc(r.couverture_url):"/api/visuel.png?f="+encodeURIComponent(r.couverture)+"&t="+Date.now()}" style="width:100%;max-width:600px;border-radius:8px;border:1px solid var(--line)"></div>`:"")+`<div class="card" style="margin-top:12px;background:var(--soft)"><h2>${esc(r.titre)}</h2><p class="muted small" style="margin:4px 0 10px">${esc(r.extrait)}</p>
     ${r.blocs.map(x=>x.type==="intertitre"?`<h3 style="text-transform:none;font-size:15px;color:var(--ink)">${esc(x.texte)}</h3>`:`<p>${x.type==="chapeau"?"<b>"+esc(x.texte)+"</b>":esc(x.texte)}</p>`).join("")}
     ${r.remarques?`<p class="small" style="color:var(--draw)">⚠️ À vérifier : ${esc(r.remarques)}</p>`:""}</div>`}
   catch(e){m.className="small err";m.textContent="Erreur : "+e.message}finally{b.disabled=false;setBusy("article",false,m.className==="small"?"<b>Brouillon d'article créé</b>":"")}};
@@ -3849,13 +3937,13 @@ function renderArticles(){const o=sec("articles");
     if(r.erreur){msg(m,"err","Erreur : "+esc(r.erreur));$("#adel").disabled=false;return}
     msg(m,"ok",`✅ « ${esc(a.titre)} » ${def?"supprimé définitivement"+(r.images?" (avec "+r.images+" image"+(r.images>1?"s":"")+")":""):"mis à la corbeille (récupérable dans WordPress > Articles > Corbeille)"}.`);charger()}
    catch(x){msg(m,"err","Erreur : "+esc(x.message));$("#adel").disabled=false}}};
- const charger=async()=>{const s=$("#asel");s.innerHTML="<option>Chargement…</option>";s.disabled=true;
-  try{const r=await api("/api/wp/articles");
+ const charger=async(force)=>{const s=$("#asel");s.innerHTML="<option>Chargement…</option>";s.disabled=true;
+  try{const r=await api("/api/wp/articles"+(force===true?"?force=1":""));
    if(r.erreur){s.innerHTML="<option>—</option>";$("#adet").innerHTML=`<p class="err small">${esc(r.erreur)} — <a href="#cfg" data-go="cfg">Réglages</a></p>`;$("#adet [data-go]").onclick=e=>{e.preventDefault();go("cfg")};return}
    liste=r.articles;s.innerHTML=`<option value="">— Choisis un article (${liste.length}) —</option>`+liste.map(a=>`<option value="${a.id}">${esc(a.date.slice(0,10).split("-").reverse().join("/"))} · ${esc(a.titre)}${a.statut!=="publish"?" ("+(ST[a.statut]||a.statut)+")":""}</option>`).join("");
    s.disabled=false;s.onchange=detail;detail()}
   catch(x){s.innerHTML="<option>—</option>";$("#adet").innerHTML=`<p class="err small">Erreur : ${esc(x.message)}</p>`}};
- $("#arecharger").onclick=charger;charger()}
+ $("#arecharger").onclick=()=>charger(true);charger()}
 // ---- publication automatique (GitHub) ----
 function renderAuto(){const o=sec("auto");
  o.innerHTML=`<div class="card"><h2>Où se fait la publication automatique ?</h2>
@@ -3906,9 +3994,9 @@ function renderAuto(){const o=sec("auto");
  const fdate=d=>d?new Date(d).toLocaleString("fr-FR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
  const RES={success:'<span class="ok">✅ réussie</span>',failure:'<span class="err">❌ échec</span>',cancelled:"annulée",skipped:"ignorée"};
  const montrer=e=>{const c=$("#autoc");
-  if(e.depot)$("#ghdep").value=e.depot;$("#ghtok").placeholder=e.jeton?"jeton enregistré (laisser vide pour le garder)":"github_pat_...";
-  if(e.non_configure||e.erreur){$("#ghdet").open=true;
-   c.innerHTML=`<p class="${e.erreur?"err":"muted"} small" style="margin-top:12px">${e.erreur?esc(e.erreur):"Pour piloter la publication automatique depuis l'outil, connecte d'abord GitHub (encadré ci-dessous)."}</p>`;return}
+  if(e.depot&&$("#ghdep"))$("#ghdep").value=e.depot;if($("#ghtok"))$("#ghtok").placeholder=e.jeton?"jeton enregistré (laisser vide pour le garder)":"github_pat_...";
+  if(e.non_configure||e.erreur){if($("#ghdet"))$("#ghdet").open=true;
+   c.innerHTML=`<p class="${e.erreur?"err":"muted"} small" style="margin-top:12px">${e.erreur?esc(e.erreur):(GH?"Connecte d'abord ce téléphone : Réglages → « Connexion administrateur ».":"Pour piloter la publication automatique depuis l'outil, connecte d'abord GitHub (encadré ci-dessous).")}</p>`;return}
   c.innerHTML=`${!e.workflow_actif?`<p class="err small">⚠️ La publication automatique est en pause sur GitHub (c'est automatique après 60 jours sans activité) : réactive un interrupteur pour la relancer.</p>`:""}
    ${["resultats","programme"].map(m=>`<div class="autol"><label class="sw"><input type="checkbox" data-auto="${m}" ${e.modes[m]&&e.workflow_actif?"checked":""}><i></i><span><b>${m==="resultats"?"Résultats":"Programme"}</b> · <span class="small">${e.modes[m]&&e.workflow_actif?'<span class="ok">activée</span>':'<span class="muted">désactivée</span>'}</span><br><span class="small muted">${HEURE[m]}</span></span></label>
     <button class="g mini" data-lancer="${m}">Publier maintenant</button></div>`).join("")}
@@ -3930,9 +4018,9 @@ function renderAuto(){const o=sec("auto");
     msg(m,"ok","✅ Lancé sur GitHub : l'article sera sur le site dans 3 à 5 minutes (tu peux fermer l'outil).");setTimeout(charger,4000)}
    catch(x){msg(m,"err",esc(x.message));b.disabled=false}})};
  const charger=async()=>{try{montrer(await api("/api/auto/etat"))}catch(x){$("#autoc").innerHTML=`<p class="err small">Erreur : ${esc(x.message)}</p>`}};
- $("#ghsave").onclick=async()=>{ghCharge=1;const m=$("#ghmsg");msg(m,"muted",spin+"Test…");
+ if($("#ghsave"))$("#ghsave").onclick=async()=>{ghCharge=1;const m=$("#ghmsg");msg(m,"muted",spin+"Test…");
   try{const r=await post("/api/github/config",{depot:$("#ghdep").value,jeton:$("#ghtok").value});$("#ghtok").value="";
-   if(r.erreur){msg(m,"err",esc(r.erreur));return}msg(m,"ok","✅ Connecté à GitHub");$("#ghdet").open=false;montrer(Object.assign(r,{depot:$("#ghdep").value,jeton:true}))}
+   if(r.erreur){msg(m,"err",esc(r.erreur));return}msg(m,"ok","✅ Connecté à GitHub");if($("#ghdet"))$("#ghdet").open=false;montrer(Object.assign(r,{depot:$("#ghdep").value,jeton:true}))}
   catch(x){msg(m,"err",esc(x.message))}};
 }
 // ---- ouvrir sur le téléphone ----
@@ -4497,7 +4585,7 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/csv":
                 return self._send(200, to_csv(res), "text/csv; charset=utf-8",
                                   {"Content-Disposition": f'attachment; filename="resultats_{res["du"]}.csv"'})
-            out = dict(res, texte=texte_reseaux(res, club_keys(cfg)))
+            out = dict(res, **textes_reseaux(res, club_keys(cfg)))
             return self._send(200, json.dumps(out, ensure_ascii=False), "application/json; charset=utf-8")
         self._send(404, "introuvable", "text/plain")
 
