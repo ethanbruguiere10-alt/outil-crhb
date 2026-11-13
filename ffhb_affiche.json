@@ -9,7 +9,7 @@
   "salle": "SALLE LUCIEN LACHAISE",
   "journee": 8,
   "photo": "14_IMG_1277.jpg",
-  "lu_a": "02:30",
+  "lu_a": "16:42",
   "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – ST CHAMOND HANDBALL PAYS DU GIER à 18:00",
   "logos_manquants": [],
   "partenaire": "oscar-b-studio.png",
@@ -39,9 +39,9 @@
     "ouverture": true
    }
   ],
-  "fichier": "affiche_N1_2026-11-21_023047.png",
-  "fichier_a4": "affiche_N1_2026-11-21_023047_A4.png",
-  "fichier_pdf": "affiche_N1_2026-11-21_023047_A4.pdf",
+  "fichier": "affiche_N1_2026-11-21_164257.png",
+  "fichier_a4": "affiche_N1_2026-11-21_164257_A4.png",
+  "fichier_pdf": "affiche_N1_2026-11-21_164257_A4.pdf",
   "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
  },
  "dernieres_affiches": {
@@ -55,7 +55,7 @@
    "salle": "SALLE LUCIEN LACHAISE",
    "journee": 8,
    "photo": "14_IMG_1277.jpg",
-   "lu_a": "02:30",
+   "lu_a": "16:42",
    "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – ST CHAMOND HANDBALL PAYS DU GIER à 18:00",
    "logos_manquants": [],
    "partenaire": "oscar-b-studio.png",
@@ -85,9 +85,9 @@
      "ouverture": true
     }
    ],
-   "fichier": "affiche_N1_2026-11-21_023047.png",
-   "fichier_a4": "affiche_N1_2026-11-21_023047_A4.png",
-   "fichier_pdf": "affiche_N1_2026-11-21_023047_A4.pdf",
+   "fichier": "affiche_N1_2026-11-21_164257.png",
+   "fichier_a4": "affiche_N1_2026-11-21_164257_A4.png",
+   "fichier_pdf": "affiche_N1_2026-11-21_164257_A4.pdf",
    "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
   },
   "cdf": {
