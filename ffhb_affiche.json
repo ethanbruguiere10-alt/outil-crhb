@@ -1,18 +1,18 @@
 {
  "derniere_affiche": {
-  "match": "CALUIRE-RILLIEUX HANDBALL – VILLEMOMBLE HB",
-  "date": "2026-11-21",
+  "match": "CALUIRE-RILLIEUX HANDBALL – METZ HANDBALL",
+  "date": "2026-12-12",
   "heure": "20:30",
   "dom": "CALUIRE-RILLIEUX HANDBALL",
-  "ext": "VILLEMOMBLE HB",
+  "ext": "METZ HANDBALL",
   "heure_corrigee": false,
   "salle": "SALLE LUCIEN LACHAISE",
-  "journee": 8,
-  "photo": "14_IMG_1277.jpg",
-  "lu_a": "16:55",
-  "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – ST CHAMOND HANDBALL PAYS DU GIER à 18:00",
+  "journee": 10,
+  "photo": "15_IMG_1314.jpg",
+  "lu_a": "01:59",
+  "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – HBC LORIOL à 18:00",
   "logos_manquants": [],
-  "partenaire": "oscar-b-studio.png",
+  "partenaire": "c2ai.png",
   "photo_validee": false,
   "type": "n1",
   "type_nom": "Nationale 1 (championnat)",
@@ -28,37 +28,37 @@
     "club": true
    },
    {
-    "nom": "VILLEMOMBLE HB",
+    "nom": "METZ HANDBALL",
     "logo": true,
     "club": false
    },
    {
-    "nom": "ST CHAMOND HANDBALL PAYS DU GIER",
+    "nom": "HBC LORIOL",
     "logo": true,
     "club": false,
     "ouverture": true
    }
   ],
-  "fichier": "affiche_N1_2026-11-21_165515.png",
-  "fichier_a4": "affiche_N1_2026-11-21_165515_A4.png",
-  "fichier_pdf": "affiche_N1_2026-11-21_165515_A4.pdf",
+  "fichier": "affiche_N1_2026-12-12_015918.png",
+  "fichier_a4": "affiche_N1_2026-12-12_015918_A4.png",
+  "fichier_pdf": "affiche_N1_2026-12-12_015918_A4.pdf",
   "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
  },
  "dernieres_affiches": {
   "n1": {
-   "match": "CALUIRE-RILLIEUX HANDBALL – VILLEMOMBLE HB",
-   "date": "2026-11-21",
+   "match": "CALUIRE-RILLIEUX HANDBALL – METZ HANDBALL",
+   "date": "2026-12-12",
    "heure": "20:30",
    "dom": "CALUIRE-RILLIEUX HANDBALL",
-   "ext": "VILLEMOMBLE HB",
+   "ext": "METZ HANDBALL",
    "heure_corrigee": false,
    "salle": "SALLE LUCIEN LACHAISE",
-   "journee": 8,
-   "photo": "14_IMG_1277.jpg",
-   "lu_a": "16:55",
-   "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – ST CHAMOND HANDBALL PAYS DU GIER à 18:00",
+   "journee": 10,
+   "photo": "15_IMG_1314.jpg",
+   "lu_a": "01:59",
+   "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – HBC LORIOL à 18:00",
    "logos_manquants": [],
-   "partenaire": "oscar-b-studio.png",
+   "partenaire": "c2ai.png",
    "photo_validee": false,
    "type": "n1",
    "type_nom": "Nationale 1 (championnat)",
@@ -74,20 +74,20 @@
      "club": true
     },
     {
-     "nom": "VILLEMOMBLE HB",
+     "nom": "METZ HANDBALL",
      "logo": true,
      "club": false
     },
     {
-     "nom": "ST CHAMOND HANDBALL PAYS DU GIER",
+     "nom": "HBC LORIOL",
      "logo": true,
      "club": false,
      "ouverture": true
     }
    ],
-   "fichier": "affiche_N1_2026-11-21_165515.png",
-   "fichier_a4": "affiche_N1_2026-11-21_165515_A4.png",
-   "fichier_pdf": "affiche_N1_2026-11-21_165515_A4.pdf",
+   "fichier": "affiche_N1_2026-12-12_015918.png",
+   "fichier_a4": "affiche_N1_2026-12-12_015918_A4.png",
+   "fichier_pdf": "affiche_N1_2026-12-12_015918_A4.pdf",
    "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
   },
   "cdf": {
