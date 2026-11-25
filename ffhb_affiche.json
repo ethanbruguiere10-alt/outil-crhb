@@ -9,7 +9,7 @@
   "salle": "SALLE LUCIEN LACHAISE",
   "journee": 10,
   "photo": "15_IMG_1314.jpg",
-  "lu_a": "20:24",
+  "lu_a": "05:03",
   "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – HBC LORIOL à 18:00",
   "logos_manquants": [],
   "partenaire": "c2ai.png",
@@ -39,9 +39,9 @@
     "ouverture": true
    }
   ],
-  "fichier": "affiche_N1_2026-12-12_202419.png",
-  "fichier_a4": "affiche_N1_2026-12-12_202419_A4.png",
-  "fichier_pdf": "affiche_N1_2026-12-12_202419_A4.pdf",
+  "fichier": "affiche_N1_2026-12-12_050308.png",
+  "fichier_a4": "affiche_N1_2026-12-12_050308_A4.png",
+  "fichier_pdf": "affiche_N1_2026-12-12_050308_A4.pdf",
   "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
  },
  "dernieres_affiches": {
@@ -55,7 +55,7 @@
    "salle": "SALLE LUCIEN LACHAISE",
    "journee": 10,
    "photo": "15_IMG_1314.jpg",
-   "lu_a": "20:24",
+   "lu_a": "05:03",
    "ouverture": "N3 M : CALUIRE-RILLIEUX HANDBALL – HBC LORIOL à 18:00",
    "logos_manquants": [],
    "partenaire": "c2ai.png",
@@ -85,9 +85,9 @@
      "ouverture": true
     }
    ],
-   "fichier": "affiche_N1_2026-12-12_202419.png",
-   "fichier_a4": "affiche_N1_2026-12-12_202419_A4.png",
-   "fichier_pdf": "affiche_N1_2026-12-12_202419_A4.pdf",
+   "fichier": "affiche_N1_2026-12-12_050308.png",
+   "fichier_a4": "affiche_N1_2026-12-12_050308_A4.png",
+   "fichier_pdf": "affiche_N1_2026-12-12_050308_A4.pdf",
    "dossier": "/home/runner/work/outil-crhb/outil-crhb/visuels"
   },
   "cdf": {
