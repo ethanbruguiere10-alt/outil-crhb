@@ -1,0 +1,981 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Outil CRHB</title>
+<link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="logo.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="CRHB"><meta name="theme-color" content="#061d4e">
+<style>
+:root{--bg:#f3f5f9;--card:#fff;--ink:#141a26;--muted:#667085;--line:#e2e6ee;--accent:#0b4fa8;--accent2:#061d4e;--jaune:#fddc1d;--on:#fff;
+ --win:#137a3f;--loss:#b42318;--draw:#8a6100;--hl:#edf3ff;--soft:#f0f3f8;--nav:#061d4e;--navink:#c9d4ec;--navon:#fddc1d;--shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08)}
+@media (prefers-color-scheme:dark){:root{--bg:#0d1117;--card:#161b23;--ink:#e6e9ef;--muted:#98a2b3;--line:#2a313c;--accent:#6aa6ff;--on:#0d1117;
+ --win:#4cc27a;--loss:#ff7a6b;--draw:#e0b545;--hl:#18233a;--soft:#1c222c;--nav:#050d22;--shadow:none}}
+*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:var(--accent)}
+h1{font-size:20px;margin:0;line-height:1.2}h2{font-size:17px;margin:0}
+h3{font-size:12px;margin:16px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+/* ---- mise en page : menu à gauche (ordinateur), barre en haut (téléphone) ---- */
+.app{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.app>div{min-width:0}
+nav.side{background:var(--nav);color:var(--navink);position:sticky;top:0;height:100vh;overflow-y:auto;padding:18px 12px 24px;display:flex;flex-direction:column;gap:2px}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px 16px;color:#fff;text-decoration:none}
+.brand img{width:44px;height:44px;object-fit:contain}.brand b{display:block;font-size:15px;line-height:1.15}.brand small{color:var(--navink);font-size:12px}
+.grp{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8193bd;margin:14px 10px 4px}
+.nv{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;text-align:left;background:transparent;color:var(--navink);border:0;border-radius:9px;padding:9px 10px;font:500 14px system-ui;cursor:pointer}
+.nv:hover{background:rgba(255,255,255,.07);color:#fff}
+.nv.on{background:rgba(253,220,29,.14);color:var(--navon);font-weight:700}
+.nv .ic{width:20px;text-align:center;flex-shrink:0;font-size:15px}
+.nv .bz{margin-left:auto;width:8px;height:8px;border-radius:50%;background:var(--navon);display:none;animation:pulse 1.2s ease-in-out infinite}
+.nv.busy .bz{display:block}
+@keyframes pulse{50%{opacity:.25}}
+.side .bas{margin-top:auto;padding:16px 10px 0;font-size:12px;color:#8193bd}
+main{padding:22px 28px 64px;max-width:1180px;width:100%}
+.top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.top .titre h1{display:flex;align-items:center;gap:8px}
+.etat{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.etat .pt{width:8px;height:8px;border-radius:50%;background:var(--win)}.etat .pt.maj{background:var(--draw);animation:pulse 1.2s infinite}
+.we{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.we b{font-size:15px;min-width:200px;text-align:center}
+.mobnav{display:none}
+@media(max-width:900px){
+ .app{grid-template-columns:minmax(0,1fr)}
+ nav.side{display:none}
+ .mobnav{display:block;position:sticky;top:0;z-index:20;background:var(--nav);padding:8px 10px calc(8px);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+ .mobnav .l1{display:flex;align-items:center;gap:8px;color:#fff;margin-bottom:6px}.mobnav .l1 img{width:30px;height:30px}.mobnav .l1 b{font-size:15px}
+ .mobnav .l1 button{margin-left:auto}
+ .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}.chips::-webkit-scrollbar{display:none}
+ .chips .nv{width:auto;white-space:nowrap;padding:7px 11px;font-size:13px;background:rgba(255,255,255,.06)}
+ .chips .nv .ic{width:auto}
+ main{padding:14px 12px 56px}
+ .we b{min-width:0;flex:1;font-size:14px}.we{width:100%}
+ .top{margin-bottom:12px}
+ #refresh{display:none}
+}
+/* ---- éléments ---- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px;box-shadow:var(--shadow)}
+.card.soft{background:var(--soft);box-shadow:none}
+.head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+button,.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:9px 14px;font:600 14px system-ui;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+@media (prefers-color-scheme:dark){button,.btn{color:#0d1117}}
+button.g,.btn.g{background:transparent;color:var(--accent);border:1px solid var(--line)}
+button.mini{padding:4px 10px;font-size:13px}
+button:disabled{opacity:.5;cursor:wait}
+.nv{color:var(--navink)}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card)}
+.seg button{border-radius:0;background:transparent;color:var(--ink);font-weight:500}.seg button.on{background:var(--accent);color:#fff}
+@media (prefers-color-scheme:dark){.seg button.on{color:#0d1117}}
+table{width:100%;border-collapse:collapse;font-size:14px}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.03em}
+td.sc{text-align:center;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.num{text-align:right;font-variant-numeric:tabular-nums}tr.me td{background:var(--hl)}
+.V{color:var(--win)}.D{color:var(--loss)}.N{color:var(--draw)}
+.muted{color:var(--muted)}.err{color:var(--loss)}.small{font-size:13px}.ok{color:var(--win)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.hero{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;padding:14px;border-radius:10px;background:var(--soft);margin-top:10px}
+.hero .t{font-weight:600;font-size:15px}.hero .t.r{text-align:right}.hero .me{font-weight:800}
+.hero .s{font-size:32px;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:center}
+.hero .d{grid-column:1/-1;text-align:center;color:var(--muted);font-size:13px}
+@media(max-width:560px){.hero{grid-template-columns:1fr;gap:4px}.hero .t.r,.hero .t{text-align:center}.hero .s{font-size:26px}}
+pre{white-space:pre-wrap;background:var(--soft);border-radius:8px;padding:12px;font:15px/1.55 system-ui;margin:12px 0 0}
+input,textarea,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink);font:inherit}
+input[type=file]{padding:6px}input[type=checkbox]{width:auto}
+.row{display:grid;grid-template-columns:140px 1fr auto;gap:6px 8px;margin-bottom:14px}
+@media(max-width:640px){.row{grid-template-columns:1fr}}
+.loader{display:flex;gap:10px;align-items:center;color:var(--muted)}
+.spin{width:18px;height:18px;border:3px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;flex-shrink:0}
+.spin.p{display:inline-block;vertical-align:middle;width:14px;height:14px;border-width:2px;margin-right:4px}
+@keyframes s{to{transform:rotate(360deg)}}
+details summary{cursor:pointer;color:var(--muted);font-size:13px;margin-top:10px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;align-items:start}
+.gridv{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+.img{width:100%;border-radius:10px;border:1px solid var(--line);display:block;background:var(--soft)}
+.pills{display:flex;gap:6px;flex-wrap:wrap}.pill{font-size:12px;padding:2px 9px;border-radius:99px;background:var(--soft);color:var(--muted)}
+.pill.r{background:#fde8e6;color:#b42318}.pill.v{background:#e5f5ec;color:#137a3f}.pill.o{background:#fff4d6;color:#8a6100}
+@media (prefers-color-scheme:dark){.pill.r{background:#3a1d1a;color:#ff9c90}.pill.v{background:#16301f;color:#6fd59a}.pill.o{background:#33290f;color:#e9c46a}}
+.sw{position:relative;display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.sw input{position:absolute;opacity:0;width:0;height:0}
+.sw i{width:46px;height:26px;border-radius:99px;background:var(--line);position:relative;transition:.2s;flex-shrink:0}
+.sw i:after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.2s}
+.sw input:checked+i{background:var(--win)}.sw input:checked+i:after{left:23px}
+.sw input:disabled+i{opacity:.5}
+.autol{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 0;border-bottom:1px solid var(--line)}
+.autol:last-child{border-bottom:0}
+.vue{display:none}.vue.on{display:block;animation:fade .15s ease}
+@keyframes fade{from{opacity:.4}to{opacity:1}}
+.toast{position:fixed;right:16px;bottom:16px;z-index:50;display:flex;flex-direction:column;gap:8px;max-width:min(380px,calc(100vw - 32px))}
+.toast div{background:var(--accent2);color:#fff;border-radius:12px;padding:12px 14px;box-shadow:0 8px 24px rgba(0,0,0,.25);font-size:14px;cursor:pointer;animation:fade .2s}
+.toast div b{color:var(--jaune)}
+.guide h2{margin-top:4px}.guide p,.guide li{max-width:780px}.guide li{margin:4px 0}
+.guide .etape{display:grid;grid-template-columns:34px 1fr;gap:10px;margin:12px 0}
+.guide .etape i{font-style:normal;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700}
+.kbd{font:600 12px system-ui;padding:1px 7px;border-radius:6px;border:1px solid var(--line);background:var(--soft)}
+.tuiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
+.tuile{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--card);cursor:pointer;text-align:left;color:var(--ink);font:inherit;display:block}
+.tuile:hover{border-color:var(--accent)}.tuile b{display:block;margin-bottom:2px}.tuile span{font-size:13px;color:var(--muted)}
+@media (prefers-color-scheme:dark){.tuile{color:var(--ink)}}
+</style></head><body>
+<div class="app">
+<nav class="side" id="side">
+ <a class="brand" href="#" data-go="accueil"><img src="logo.png" alt=""><div><b>Caluire-Rillieux HB</b><small>Outil résultats &amp; com'</small></div></a>
+ <button class="nv" data-v="accueil"><span class="ic">⌂</span>Accueil<span class="bz"></span></button>
+ <div class="grp">Résultats</div>
+ <button class="nv" data-v="club"><span class="ic">★</span>Matchs du club<span class="bz"></span></button>
+ <button class="nv" data-v="all"><span class="ic">≡</span>Tous les matchs<span class="bz"></span></button>
+ <div class="grp">Réseaux sociaux</div>
+ <button class="nv" data-v="visuel"><span class="ic">▣</span>Visuels programme / résultats<span class="bz"></span></button>
+ <button class="nv" data-v="post"><span class="ic">✎</span>Texte réseaux<span class="bz"></span></button>
+ <button class="nv" data-v="affiche"><span class="ic">◆</span>Affiche prochain match<span class="bz"></span></button>
+ <button class="nv" data-v="ecran"><span class="ic">▶</span>Écran géant<span class="bz"></span></button>
+ <div class="grp">Site du club</div>
+ <button class="nv" data-v="article"><span class="ic">✦</span>Écrire un article<span class="bz"></span></button>
+ <button class="nv" data-v="articles"><span class="ic">☰</span>Articles du site<span class="bz"></span></button>
+ <button class="nv" data-v="auto"><span class="ic">⏱</span>Publication auto<span class="bz"></span></button>
+ <div class="grp">Outils</div>
+ <button class="nv" data-v="cfg"><span class="ic">⚙</span>Réglages<span class="bz"></span></button>
+ <button class="nv" data-v="mobile"><span class="ic">▯</span>Sur téléphone<span class="bz"></span></button>
+ <button class="nv" data-v="aide"><span class="ic">?</span>Mode d'emploi<span class="bz"></span></button>
+ <div class="bas" id="sidemeta"></div>
+</nav>
+<div>
+<div class="mobnav"><div class="l1"><img src="logo.png" alt=""><b>Outil CRHB</b><button class="g mini" id="mrefresh" style="color:#fff;border-color:rgba(255,255,255,.3)">Actualiser</button></div>
+ <div class="chips" id="chips"></div></div>
+<main>
+ <div class="top"><div class="titre"><h1 id="vtitre">Accueil</h1><div class="etat" id="etat"><span class="pt"></span><span>Chargement…</span></div></div>
+  <div class="bar" style="margin:0"><div class="we" id="webar"><button class="g mini" id="prev" title="Week-end précédent">◀</button><b id="wlabel">…</b><button class="g mini" id="next" title="Week-end suivant">▶</button><button class="g mini" id="avenir">À venir</button><button class="g mini" id="dernier">Dernier</button></div>
+  <button class="g" id="refresh" title="Relire toutes les pages FFHB">↻ Actualiser</button></div></div>
+ <section class="vue" id="v-accueil"></section>
+ <section class="vue" id="v-club"></section>
+ <section class="vue" id="v-all"></section>
+ <section class="vue" id="v-visuel"></section>
+ <section class="vue" id="v-post"></section>
+ <section class="vue" id="v-affiche"></section>
+ <section class="vue" id="v-ecran"></section>
+ <section class="vue" id="v-article"></section>
+ <section class="vue" id="v-articles"></section>
+ <section class="vue" id="v-auto"></section>
+ <section class="vue" id="v-cfg"></section>
+ <section class="vue" id="v-mobile"></section>
+ <section class="vue" id="v-aide"></section>
+</main></div></div>
+<div class="toast" id="toast"></div>
+<script>
+// ===== Outil CRHB — version GitHub =====
+// La page est la même que sur l'ordinateur. Ici, ses demandes « api/… » sont traitées ainsi :
+//  - lecture (résultats, visuels, affiches, articles…) : fichiers du site (data/*.json), créés par GitHub ;
+//  - actions (affiche, article, publication, réglages…) : lancées sur GitHub avec ton jeton, puis
+//    la page attend le résultat (2 à 3 minutes).
+(function () {
+  const P = location.pathname.split("/").filter(Boolean);
+  const DEPOT = { owner: location.hostname.split(".")[0], repo: P[0] || "outil-crhb" };
+  const BASE = location.pathname.replace(/[^/]*$/, "");
+  const _fetch = window.fetch.bind(window);
+  const CLE = "crhb_jeton_github";
+  const tok = { get() { try { return localStorage.getItem(CLE) || ""; } catch (e) { return ""; } },
+                set(v) { try { v ? localStorage.setItem(CLE, v) : localStorage.removeItem(CLE); } catch (e) {} } };
+  const dort = ms => new Promise(r => setTimeout(r, ms));
+  const json = (o, code) => new Response(JSON.stringify(o), { status: code || 200, headers: { "Content-Type": "application/json" } });
+  const b64d = s => decodeURIComponent(escape(atob(s.replace(/\n/g, ""))));
+  const b64e = s => btoa(unescape(encodeURIComponent(s)));
+
+  // service worker : images / vidéos / PDF / CSV
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register(BASE + "sw.js", { scope: BASE }).then(() => {
+      if (!navigator.serviceWorker.controller) {
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          try { if (!sessionStorage.getItem("crhb_sw")) { sessionStorage.setItem("crhb_sw", "1"); location.reload(); } } catch (e) {}
+        });
+      }
+    }).catch(() => {});
+  }
+
+  // ---- données du site ----
+  let VERSION = null;
+  async function version() {
+    try { VERSION = await (await _fetch(BASE + "data/version.json?t=" + Date.now(), { cache: "no-store" })).json(); }
+    catch (e) { VERSION = VERSION || { build: Date.now() }; }
+    return VERSION;
+  }
+  async function donnee(nom) {
+    if (!VERSION) await version();
+    const r = await _fetch(BASE + "data/" + nom + "?v=" + VERSION.build);
+    if (!r.ok) return null;
+    return nom.endsWith(".json") ? r.json() : r.text();
+  }
+
+  // ---- GitHub ----
+  function erreurGH(code, j) {
+    const m = (j && j.message) || "";
+    if (code === 401) return "jeton GitHub refusé (expiré ou mal copié) : reconnecte-toi dans Réglages.";
+    if (code === 403) return "le jeton n'a pas toutes les permissions (Actions, Contents, Secrets, Variables en « Read and write »)." + (m ? " (" + m + ")" : "");
+    if (code === 404) return "introuvable sur GitHub" + (m ? " (" + m + ")" : "");
+    if (code === 422) return "GitHub a refusé la demande" + (m ? " : " + m : "");
+    return "GitHub a répondu erreur " + code + (m ? " : " + m : "");
+  }
+  async function gh(methode, chemin, corps, jeton) {
+    const t = jeton || tok.get();
+    if (!t) { const e = new Error("connecte d'abord ce téléphone : Réglages → « Connexion administrateur »."); e.connexion = true; throw e; }
+    const r = await _fetch("https://api.github.com/repos/" + DEPOT.owner + "/" + DEPOT.repo + chemin, {
+      method: methode, cache: "no-store",
+      headers: Object.assign({ Authorization: "Bearer " + t, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28" },
+                             corps ? { "Content-Type": "application/json" } : {}),
+      body: corps ? JSON.stringify(corps) : undefined });
+    if (r.status === 204) return null;
+    const j = await r.json().catch(() => null);
+    if (!r.ok) { const e = new Error(erreurGH(r.status, j)); e.status = r.status; throw e; }
+    return j;
+  }
+  async function ecrireFichier(chemin, contenuB64, message) {
+    let sha;
+    try { sha = (await gh("GET", "/contents/" + chemin + "?ref=main")).sha; } catch (e) { if (e.status !== 404) throw e; }
+    return gh("PUT", "/contents/" + chemin, { message: message || "Outil CRHB : " + chemin, content: contenuB64, sha, branch: "main" });
+  }
+  async function variable(nom, valeur) {
+    try { await gh("PATCH", "/actions/variables/" + nom, { name: nom, value: valeur }); }
+    catch (e) { if (e.status === 404) await gh("POST", "/actions/variables", { name: nom, value: valeur }); else throw e; }
+  }
+  async function lireVariable(nom) {
+    try { return (await gh("GET", "/actions/variables/" + nom)).value; } catch (e) { if (e.status === 404) return null; throw e; }
+  }
+  let sodium = null;
+  async function secret(nom, valeur) {
+    if (!sodium) { sodium = (await import("https://cdn.jsdelivr.net/npm/libsodium-wrappers@0.7.13/+esm")).default; await sodium.ready; }
+    const cle = await gh("GET", "/actions/secrets/public-key");
+    const chiffre = sodium.crypto_box_seal(sodium.from_string(valeur), sodium.from_base64(cle.key, sodium.base64_variants.ORIGINAL));
+    await gh("PUT", "/actions/secrets/" + nom, { encrypted_value: sodium.to_base64(chiffre, sodium.base64_variants.ORIGINAL), key_id: cle.key_id });
+  }
+
+  // lance une action sur GitHub et attend son résultat
+  async function action(nom, params, attendre) {
+    const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    const t0 = Date.now();
+    await gh("POST", "/actions/workflows/outil.yml/dispatches", { ref: "main", inputs: { action: nom, params: JSON.stringify(Object.assign({}, params || {}, { id })) } });
+    if (attendre === false) return { id };
+    let res = null;
+    while (Date.now() - t0 < 20 * 60000) {
+      await dort(7000);
+      try { const fic = await gh("GET", "/contents/etat_web/" + id + ".json?ref=main"); res = JSON.parse(b64d(fic.content)); break; }
+      catch (e) { if (e.status !== 404) throw e; }
+      if (Date.now() - t0 > 60000) {   // la tâche a-t-elle échoué avant d'écrire son résultat ?
+        const runs = (await gh("GET", "/actions/workflows/outil.yml/runs?per_page=10")).workflow_runs || [];
+        const run = runs.find(r => (r.display_title || "").includes(id));
+        if (run && run.status === "completed" && run.conclusion !== "success")
+          throw new Error("la tâche a échoué sur GitHub (" + run.conclusion + "). Détails : " + run.html_url);
+      }
+    }
+    if (!res) throw new Error("GitHub met plus de 20 minutes : regarde l'onglet Actions du dépôt.");
+    // attendre que le site contienne le résultat (images, données)
+    const t1 = Date.now();
+    while (Date.now() - t1 < 5 * 60000) {
+      await version();
+      if ((VERSION.actions || []).includes(id)) break;
+      await dort(6000);
+    }
+    return res;
+  }
+  // envoi de fichiers (photos, logo) dans entrees/<id>/ avant une action
+  async function envoyer(fichiers) {
+    const dossier = "entrees/" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    let i = 0;
+    for (const f of fichiers) {
+      i++;
+      const [entete, donnees] = f.data.split(",");
+      const ext = /png/.test(entete) ? "png" : /webp/.test(entete) ? "webp" : "jpg";
+      await ecrireFichier(dossier + "/" + String(i).padStart(2, "0") + "." + ext, donnees, "Outil CRHB : fichier envoyé");
+    }
+    return dossier;
+  }
+
+  // ---- mise à jour complète en cours (bouton Actualiser / réglages) ----
+  const MAJ = "crhb_maj";
+  const majEnCours = () => { try { const m = JSON.parse(localStorage.getItem(MAJ) || "null"); return m && Date.now() - m.t < 15 * 60000 ? m : null; } catch (e) { return null; } };
+  async function lancerMaj() {
+    const v = await version();
+    await action("reconstruire", {}, false);
+    try { localStorage.setItem(MAJ, JSON.stringify({ t: Date.now(), build: v.build })); } catch (e) {}
+  }
+
+  async function etatAuto() {
+    if (!tok.get()) return { non_configure: true, depot: DEPOT.owner + "/" + DEPOT.repo, jeton: false };
+    let wf;
+    try { wf = await gh("GET", "/actions/workflows/publication.yml"); }
+    catch (e) { if (e.status === 404) return { erreur: "le fichier .github/workflows/publication.yml manque dans le dépôt (voir le guide)." }; throw e; }
+    const modes = {};
+    for (const [m, v] of [["resultats", "FFHB_AUTO_RESULTATS"], ["programme", "FFHB_AUTO_PROGRAMME"]])
+      modes[m] = !/^(off|non|false|0)$/i.test((await lireVariable(v)) || "on");
+    const runs = (await gh("GET", "/actions/workflows/publication.yml/runs?per_page=8")).workflow_runs || [];
+    return { workflow_actif: wf.state === "active", modes, statut_publication: (await lireVariable("FFHB_WP_STATUT")) || "draft",
+             lien: "https://github.com/" + DEPOT.owner + "/" + DEPOT.repo + "/actions/workflows/publication.yml",
+             depot: DEPOT.owner + "/" + DEPOT.repo, jeton: true,
+             executions: runs.map(r => ({ date: r.created_at, declencheur: r.event, statut: r.status, resultat: r.conclusion, lien: r.html_url })) };
+  }
+
+  // ---- toutes les demandes « api/… » de la page ----
+  async function traiter(u, o) {
+    const q = u.searchParams, m = (o && o.method || "GET").toUpperCase();
+    const corps = o && o.body ? JSON.parse(o.body) : {};
+    const chemin = u.pathname.slice((BASE + "api/").length);
+    const off = parseInt(q.get("offset") || "0", 10) || 0;
+    switch (chemin) {
+      case "resultats": {
+        if (q.get("force") === "1") await lancerMaj();
+        await version();
+        const r = await donnee("res_" + off + ".json");
+        if (!r) return { erreur: "ce week-end n'est pas disponible ici (4 week-ends passés et 3 à venir)." };
+        const enCours = majEnCours();
+        if (enCours) Object.assign(r, { maj_en_cours: true, progression: { total: 0, lus: 0 } });
+        return r;
+      }
+      case "etat": {
+        const mj = majEnCours(); await version();
+        if (mj && VERSION.build !== mj.build) { try { localStorage.removeItem(MAJ); } catch (e) {} return { maj_en_cours: false }; }
+        return { maj_en_cours: !!mj, salles_en_cours: false, progression: { total: 0, lus: 0 } };
+      }
+      case "config":
+        if (m === "GET") return (await donnee("config.json")) || { club: "", competitions: [] };
+        {
+          const fic = await gh("GET", "/contents/ffhb_config.json?ref=main");
+          const c = JSON.parse(b64d(fic.content));
+          c.club = corps.club ?? c.club; c.competitions = corps.competitions ?? c.competitions;
+          await gh("PUT", "/contents/ffhb_config.json", { message: "Outil CRHB : réglages", content: b64e(JSON.stringify(c, null, 2)), sha: fic.sha, branch: "main" });
+          return {};
+        }
+      case "visuels": {
+        const mode = q.get("mode") === "programme" ? "programme" : "resultats", theme = q.get("theme") === "jaune" ? "jaune" : "bleu";
+        const nom = "visuels_" + off + "_" + mode + "_" + theme + ".json";
+        return (await donnee(nom)) || await action("visuels", { offset: off, mode, theme });
+      }
+      case "wordpress/publier":
+        return action("publier", { offset: off, mode: q.get("mode") || "resultats", theme: q.get("theme") || "bleu" });
+      case "affiche/derniere": return (await donnee("affiche_" + (q.get("type") === "cdf" ? "cdf" : "n1") + ".json")) || {};
+      case "affiche": return action("affiche", { type: q.get("type"), photo: q.get("photo") || "", relire: q.get("relire") === "0" ? 0 : 1 });
+      case "affiche/valider": case "affiche/devalider":
+        return action(chemin.endsWith("devalider") ? "devalider" : "valider", { date: q.get("date"), photo: q.get("photo") || "" });
+      case "affiche/logo": return action("logo", { nom: corps.nom, detourer: corps.detourer, dossier: await envoyer([{ data: corps.data }]) });
+      case "affiche/infos":
+        return action("infos", { type: corps.type, date: corps.date, texte: corps.texte, sans_image: corps.sans_image,
+                                 dossier: corps.image ? await envoyer([{ data: corps.image }]) : "" });
+      case "horaire": return action("horaire", corps);
+      case "ecran": return action("ecran", {});
+      case "ecran/dernieres": return (await donnee("ecran.json")) || {};
+      case "article":
+        return action("article", { texte: corps.texte, type: corps.type, couverture: corps.couverture,
+                                   dossier: (corps.photos || []).length ? await envoyer(corps.photos) : "" });
+      case "article/publier": return action("publier_article", { post_id: q.get("id") });
+      case "wp/articles": return (await donnee("articles.json")) || { articles: [] };
+      case "wp/supprimer": return action("supprimer_article", { post_id: corps.id, definitif: corps.definitif });
+      case "auto/etat": return etatAuto();
+      case "auto/regler":
+        await variable(corps.mode === "programme" ? "FFHB_AUTO_PROGRAMME" : "FFHB_AUTO_RESULTATS", corps.actif ? "on" : "off");
+        if (corps.actif) { try { await gh("PUT", "/actions/workflows/publication.yml/enable"); } catch (e) {} }
+        return etatAuto();
+      case "auto/statut": await variable("FFHB_WP_STATUT", corps.statut === "publish" ? "publish" : "draft"); return etatAuto();
+      case "auto/lancer":
+        await gh("POST", "/actions/workflows/publication.yml/dispatches", { ref: "main", inputs: { mode: corps.mode === "programme" ? "programme" : "resultats" } });
+        return { lance: true };
+      case "auto/local": return { mode_auto: "github", modes: { resultats: false, programme: false }, journal: [] };
+      case "github/config": if (corps.jeton) await GHWEB.connecter(corps.jeton); return etatAuto();
+      case "wordpress/config":
+        if (corps.site) await secret("FFHB_WP_SITE", corps.site);
+        if (corps.utilisateur) await secret("FFHB_WP_USER", corps.utilisateur);
+        if (corps.mot_de_passe) await secret("FFHB_WP_PASSWORD", corps.mot_de_passe);
+        if (corps.statut) await variable("FFHB_WP_STATUT", corps.statut === "publish" ? "publish" : "draft");
+        return {};
+      case "wordpress/test": return action("tester_wp", {});
+      case "ia/config":
+        for (const [mot, cle] of Object.entries(corps.cles || {})) if (cle) await secret("FFHB_" + mot.toUpperCase() + "_KEY", cle);
+        if (corps.moteur) await variable("FFHB_IA_MOTEUR", corps.moteur);
+        for (const [mot, mod] of Object.entries(corps.modeles || {})) if (mod) await variable("FFHB_IA_MODELE_" + mot.toUpperCase(), mod);
+        return {};
+      case "ia/test": return action("tester_ia", {});
+      case "mobile": return {};
+      default: return { erreur: "fonction non disponible sur la version GitHub : " + chemin };
+    }
+  }
+
+  window.fetch = async function (entree, o) {
+    const url = typeof entree === "string" ? entree : entree.url;
+    const u = new URL(url, location.href);
+    if (u.origin === location.origin && u.pathname.startsWith(BASE + "api/") && !/^visuel\.|^csv$/.test(u.pathname.slice((BASE + "api/").length))) {
+      try { return json(await traiter(u, o)); }
+      catch (e) { return json({ erreur: e.message || String(e) }); }
+    }
+    return _fetch(entree, o);
+  };
+
+  window.GHWEB = {
+    depot: DEPOT,
+    connecte: () => !!tok.get(),
+    async connecter(t) {
+      if (!/^(github_pat_|ghp_)/.test(t || "")) throw new Error("ce n'est pas un jeton GitHub : il commence par « github_pat_ ».");
+      const d = await gh("GET", "", null, t);
+      if (d.permissions && !d.permissions.push) throw new Error("ce jeton ne peut pas modifier le dépôt (Contents doit être en « Read and write »).");
+      await gh("GET", "/actions/variables?per_page=1", null, t);
+      tok.set(t);
+    },
+    deconnecter() { tok.set(""); },
+  };
+})();
+
+</script>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const sec=v=>document.getElementById("v-"+v);
+const LS={get:(k,d)=>{try{return localStorage.getItem(k)??d}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const TITRES={accueil:"Accueil",club:"Matchs du club",all:"Tous les matchs du week-end",visuel:"Visuels programme / résultats",post:"Texte pour les réseaux",
+ affiche:"Affiche du prochain match",ecran:"Écran géant",article:"Écrire un article",articles:"Articles du site",auto:"Publication automatique",cfg:"Réglages",aide:"Mode d'emploi",mobile:"Ouvrir sur le téléphone"};
+const VUES_WE=["club","all","visuel","post","accueil"];          // vues qui dépendent du week-end choisi
+let offset=0,data=null,dataV=0,view="accueil",cfg=null,vmode=null,charge=null;
+const rendu={},init={};
+const spin='<span class="spin p"></span>';
+const fmt=(iso,h)=>{if(!iso)return"";const d=new Date(iso+"T12:00");return d.toLocaleDateString("fr-FR",{weekday:"short",day:"2-digit",month:"2-digit"})+(h?" "+h.replace(":","h"):"")};
+const dd=iso=>new Date(iso+"T12:00").toLocaleDateString("fr-FR",{day:"numeric",month:"long"});
+const jourLong=iso=>new Date(iso+"T12:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"});
+const norm=s=>String(s||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase();
+const keys=()=>(data?.club||"").split(/[,;]/).map(s=>norm(s.trim())).filter(Boolean);
+function res(m,K){if(m.sd==null||m.se==null||!m.club)return"";const c=K.some(k=>norm(m.dom).includes(k));const a=c?m.sd:m.se,b=c?m.se:m.sd;return a>b?"V":a<b?"D":"N"}
+const api=async(u,o)=>{const r=await fetch(u,o);const t=await r.text();try{return JSON.parse(t)}catch(e){throw new Error("réponse illisible de l'outil")}};
+const post=(u,b)=>api(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b||{})});
+// ---- tâches en cours (pastille dans le menu) et notifications ----
+const occupe={};
+function setBusy(v,on,fin){occupe[v]=on;document.querySelectorAll(`.nv[data-v="${v}"]`).forEach(b=>b.classList.toggle("busy",!!on));
+ if(!on&&fin&&view!==v)toast(fin,v)}
+function toast(txt,v){const d=document.createElement("div");d.innerHTML=txt+(v?' <span style="opacity:.75">— ouvrir</span>':"");
+ d.onclick=()=>{if(v)go(v);d.remove()};$("#toast").appendChild(d);setTimeout(()=>d.remove(),7000)}
+function msg(el,cls,html){if(!el)return;el.className="small "+(cls||"muted");el.innerHTML=html}
+// ---- navigation ----
+function construireChips(){$("#chips").innerHTML=[...document.querySelectorAll("#side .nv")].map(b=>`<button class="nv" data-v="${b.dataset.v}">${b.innerHTML}</button>`).join("");
+ document.querySelectorAll(".nv").forEach(b=>b.onclick=()=>go(b.dataset.v));
+ document.querySelectorAll("[data-go]").forEach(a=>a.onclick=e=>{e.preventDefault();go(a.dataset.go)})}
+function go(v){if(!TITRES[v])v="accueil";view=v;LS.set("ffhb_vue",v);
+ if(location.hash!=="#"+v)history.replaceState(null,"","#"+v);
+ document.querySelectorAll(".nv").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
+ document.querySelectorAll(".vue").forEach(s=>s.classList.toggle("on",s.id==="v-"+v));
+ $("#vtitre").textContent=TITRES[v];
+ $("#webar").style.display=VUES_WE.includes(v)&&v!=="accueil"?"":"none";
+ const c=document.querySelector(`.chips .nv[data-v="${v}"]`);if(c)c.scrollIntoView({inline:"center",block:"nearest",behavior:"smooth"});
+ afficher(v);window.scrollTo({top:0})}
+function afficher(v){
+ if(v==="affiche"){if(!init.affiche){init.affiche=1;renderAffiche()}return}
+ if(v==="ecran"){if(!init.ecran){init.ecran=1;renderEcran()}return}
+ if(v==="article"){if(!init.article){init.article=1;renderArticle()}return}
+ if(v==="aide"){if(!init.aide){init.aide=1;renderAide()}return}
+ if(v==="mobile"){renderMobile();return}
+ if(v==="articles"){if(!init.articles){init.articles=1;renderArticles()}return}
+ if(v==="auto"){if(!init.auto){init.auto=1;renderAuto()}return}
+ if(v==="cfg"){if(cfg&&!init.cfg){init.cfg=1;renderCfg()}else if(!cfg)sec("cfg").innerHTML='<div class="card loader"><div class="spin"></div>Chargement…</div>';return}
+ if(v==="visuel"){renderVisuel();return}
+ if(!data){sec(v).innerHTML='<div class="card loader"><div class="spin"></div>Chargement des résultats…</div>';return}
+ if(rendu[v]===dataV)return;rendu[v]=dataV;
+ if(v==="accueil")renderAccueil();else if(v==="post")renderPost();else renderMatchs(v)}
+// ---- tableaux ----
+function mtable(ms,K){if(!ms.length)return'<p class="muted">Aucun match ce week-end.</p>';K=K||keys();
+ return`<div class="scroll"><table><thead><tr><th>Date</th><th>Domicile</th><th style="text-align:center">Score</th><th>Extérieur</th></tr></thead><tbody>${ms.map(m=>`<tr>
+ <td style="white-space:nowrap">${fmt(m.date,m.heure)}${m.journee?` <span class="muted small">J${m.journee}</span>`:""}${m.tour?` <span class="muted small">${esc(m.tour)}</span>`:""}</td>
+ <td>${K.some(k=>norm(m.dom).includes(k))?"<b>"+esc(m.dom)+"</b>":esc(m.dom)}</td>
+ <td class="sc ${res(m,K)}">${m.sd==null?'<span class="muted">à venir</span>':m.sd+" - "+m.se}</td>
+ <td>${K.some(k=>norm(m.ext).includes(k))?"<b>"+esc(m.ext)+"</b>":esc(m.ext)}</td></tr>`).join("")}</tbody></table></div>`}
+function stable(rows){if(!rows.length)return'<p class="muted small">Classement non trouvé.</p>';
+ const cols=[["j","J"],["g","G"],["n","N"],["p","P"],["diff","Diff"]].filter(([k])=>rows.some(r=>r[k]!=null));
+ return`<div class="scroll"><table><thead><tr><th>#</th><th>Équipe</th><th class="num">Pts</th>${cols.map(c=>`<th class="num">${c[1]}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr class="${r.club?"me":""}"><td>${r.pos??""}</td><td>${esc(r.equipe)}</td><td class="num"><b>${r.pts}</b></td>${cols.map(c=>`<td class="num">${r[c[0]]??""}</td>`).join("")}</tr>`).join("")}</tbody></table></div>`}
+// ---- accueil ----
+function renderAccueil(){const o=sec("accueil");if(!data)return;
+ const cl=data.competitions.flatMap(c=>(c.weekend_club||[]).map(m=>({m,c})));
+ const joues=cl.filter(x=>x.m.sd!=null),avenir=cl.filter(x=>x.m.sd==null);
+ const K=keys();const bilan={V:0,D:0,N:0};joues.forEach(x=>{const r=res(x.m,x.c.club_keys||K);if(r)bilan[r]++});
+ const prochains=avenir.sort((a,b)=>(a.m.date+(a.m.heure||"")).localeCompare(b.m.date+(b.m.heure||""))).slice(0,6);
+ const ctl=data.controle||{},pb=data.competitions.filter(c=>["attente","verifier","echec"].includes(c.statut));
+ o.innerHTML=`<div class="card"><div class="head"><h2>Week-end du ${dd(data.du)} au ${dd(data.au)}</h2>
+   <div class="seg"><button class="${offset===0?"on":""}" data-off="0">${new Date().toISOString().slice(0,10)>=data.du&&offset===0?"Ce week-end":"Dernier week-end"}</button><button class="${offset===-1?"on":""}" data-off="-1">Week-end à venir</button></div></div>
+  <div class="pills" style="margin-top:10px">${joues.length?`<span class="pill v">${bilan.V} victoire${bilan.V>1?"s":""}</span><span class="pill r">${bilan.D} défaite${bilan.D>1?"s":""}</span>${bilan.N?`<span class="pill o">${bilan.N} nul${bilan.N>1?"s":""}</span>`:""}`:""}
+   <span class="pill">${cl.length} match${cl.length>1?"s":""} du club</span>${avenir.length?`<span class="pill">${avenir.length} à venir</span>`:""}
+   ${pb.length?`<span class="pill r">${pb.length} équipe(s) à vérifier</span>`:ctl.lecture?"":`<span class="pill v">toutes les équipes lues</span>`}${ctl.lecture?`<span class="pill o">${ctl.lecture} en lecture…</span>`:""}</div>
+  ${prochains.length?`<h3>Prochains matchs</h3>${prochains.map(({m,c})=>`<div class="small" style="padding:6px 0;border-bottom:1px solid var(--line)"><b>${esc(c.nom)}</b> · ${fmt(m.date,m.heure)} · ${esc(m.dom)} – ${esc(m.ext)}${m.salle?" · "+esc(m.salle):""}</div>`).join("")}`:""}
+  ${joues.length?`<h3>Résultats</h3>${joues.map(({m,c})=>{const r=res(m,c.club_keys||K);return`<div class="small" style="padding:6px 0;border-bottom:1px solid var(--line)"><b>${esc(c.nom)}</b> · ${esc(m.dom)} <b class="${r}">${m.sd} – ${m.se}</b> ${esc(m.ext)}</div>`}).join("")}`:""}
+ </div>
+ <div class="tuiles">
+  ${[["club","Matchs du club","Scores, horaires et salles du week-end"],["visuel","Visuels","Programme ou résultats en images, publication sur le site"],
+    ["affiche","Affiche","Affiche N1 (championnat ou Coupe de France)"],["post","Texte réseaux","Le texte prêt à copier"],["ecran","Écran géant","Vidéos des prochains matchs"],
+    ["article","Écrire un article","Rédaction avec l'IA pour le site"],["articles","Articles du site","Voir ou supprimer un article"],["auto","Publication auto","Activer / couper la publication automatique"],["mobile","Sur téléphone","Ouvrir l'outil sur ton téléphone"],["aide","Mode d'emploi","Comment utiliser l'outil"]].map(t=>`<button class="tuile" data-go="${t[0]}"><b>${t[1]}</b><span>${t[2]}</span></button>`).join("")}
+ </div>`;
+ o.querySelectorAll("[data-off]").forEach(b=>b.onclick=()=>changerWE(+b.dataset.off));
+ o.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>go(b.dataset.go))}
+// ---- matchs ----
+function renderMatchs(v){const o=sec(v);
+ const sansMatch=[];
+ const K=data.controle||{},pb=data.competitions.filter(c=>["attente","verifier","echec"].includes(c.statut));
+ const lib={attente:"match joué, score pas encore saisi sur la FFHB",verifier:"club introuvable sur la page (lien à vérifier)",echec:"page FFHB illisible"};
+ const ctrl=`<div class="card" style="border-color:${pb.length?"var(--loss)":K.lecture?"var(--line)":"var(--win)"}"><div class="head"><h2>${pb.length?"⚠️ "+pb.length+" équipe(s) à vérifier":K.lecture?"⏳ Lecture FFHB en cours ("+(data.competitions.length-K.lecture)+"/"+data.competitions.length+")":"✅ Toutes les équipes ont été lues"}</h2>
+  <span class="muted small">${data.competitions.length} équipes · ${K.ok||0} avec score · ${K.aucun||0} sans match${K.a_venir?" · "+K.a_venir+" à venir":""}${K.attente?" · "+K.attente+" score en attente":""}${K.lecture?" · "+K.lecture+" en lecture":""}</span></div>
+  ${pb.length?`<ul style="margin:10px 0 0;padding-left:20px">${pb.map(c=>`<li><b>${esc(c.nom)}</b> : ${lib[c.statut]}${c.statut==="echec"&&c.erreur?` <span class="muted small">(${esc(c.erreur).slice(0,120)})</span>`:""}</li>`).join("")}</ul>
+   <p class="muted small" style="margin:8px 0 0">« Actualiser » relit toutes les pages. Un score en attente apparaîtra dès que le club l'aura saisi sur la FFHB.</p>`:""}</div>`;
+ o.innerHTML=ctrl+data.competitions.map(c=>{
+  if(c.statut==="lecture")return`<div class="card loader"><div class="spin"></div><div><b>${esc(c.nom)}</b><br><span class="small">Lecture de la FFHB en cours…</span></div></div>`;
+  const ms=v==="club"?c.weekend_club:c.weekend;const CK=c.club_keys||keys();
+  if(v==="club"&&c.statut==="aucun"){sansMatch.push(c);return""}
+  let h=`<div class="card"><div class="head"><h2><a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.nom)}</a></h2><span class="muted small">${esc(c.titre||"")}</span></div>`;
+  if(c.erreur)h+=`<p class="err">Lecture impossible : ${esc(c.erreur)}</p>`;
+  else{
+   if(v==="club"){
+    h+=(ms||[]).length?ms.map(m=>{const r=res(m,CK);const me=n=>CK.some(k=>norm(n).includes(k));
+     return`<div class="hero"><div class="t r ${me(m.dom)?"me":""}">${esc(m.dom)}</div>
+     <div class="s ${r}">${m.sd==null?(m.date&&m.date<new Date().toISOString().slice(0,10)?'<span class="muted" style="font-size:16px">score non saisi</span>':`<span style="font-size:26px">${m.heure?m.heure.replace(":","h"):'<span class="muted" style="font-size:16px">horaire à fixer</span>'}</span>`):m.sd+" – "+m.se}</div>
+     <div class="t ${me(m.ext)?"me":""}">${esc(m.ext)}</div>
+     <div class="d">${fmt(m.date,m.heure)}${m.heure_corrigee?" (horaire corrigé)":""}${m.salle?" · 📍 "+esc(m.salle):""}${m.journee?" · Journée "+m.journee:""}${m.tour?" · "+esc(m.tour):""}${r?" · "+{V:"Victoire",D:"Défaite",N:"Match nul"}[r]:""}</div></div>`}).join("")
+     :'<p class="muted">Pas de match du club ce week-end.</p>'}
+   else h+=`<h3>Matchs du week-end</h3>`+mtable(ms||[],CK);
+   if(c.coupe&&!c.matchs.length)h+=`<p class="muted small">Le club n'apparaît dans aucun tour de cette coupe pour l'instant.</p>`;
+   if(c.club_absent)h+=`<p class="err small">Le club n'apparaît pas sur cette page : ce n'est sans doute pas la bonne poule. Ouvre le lien, choisis la poule du club (ou « Filtrer par club »), puis colle la nouvelle adresse dans Réglages.</p>`;
+   if(!c.matchs.length&&!c.coupe)h+=`<p class="err small">Aucun match reconnu sur la page. Zippe le dossier <b>ffhb_debug</b> (à côté du programme) et envoie-le à Claude.</p>`;
+   else if(!(ms||[]).length){const last=[...c.matchs].filter(m=>m.date&&m.date<data.du&&m.sd!=null).slice(-3);
+     if(last.length)h+=`<details><summary>Derniers résultats connus</summary>${mtable(last,CK)}</details>`}
+   if(!c.coupe)h+=`<details><summary>Classement</summary>${stable(c.classement)}</details>`;
+   else h+=`<details><summary>Tours lus</summary><p class="small">${(c.tours||[]).map(t=>`<a href="${esc(t.url||"#")}" target="_blank" rel="noopener">${esc(t.tour||"?")}</a> : ${t.erreur?'<span class="err">'+esc(t.erreur)+'</span>':t.club+" match(s) du club / "+t.matchs}`).join("<br>")}</p></details>`;
+   h+=`<p class="muted small" style="margin:10px 0 0">${c.coupe?(c.tours||[]).length+" tour(s) lu(s), "+c.matchs.length+" match(s) du club":c.matchs.length+" matchs lus"+(c.saison_complete?" (saison complète du club)":"")} · ${c.pages_lues||0} page(s) · ${c.duree||"?"}s</p>`}
+  return h+"</div>"}).join("")
+  +(sansMatch.length?`<div class="card"><h2>Pas de match ce week-end</h2><p class="muted" style="margin:8px 0 0">${sansMatch.map(c=>
+    `<a href="${esc(c.url)}" target="_blank" rel="noopener">${esc(c.nom)}</a>`).join(" · ")}</p></div>`:"")}
+// ---- texte réseaux ----
+function renderPost(){const o=sec("post");
+ const T=[["res","Résultats du week-end",data.texte_resultats??data.texte],["prog","Programme du week-end",data.texte_programme??""]];
+ o.innerHTML=T.map(([k,t,x])=>`<div class="card"><div class="head"><h2>${t}</h2><div class="bar" style="margin:0"><button class="g" data-cp="${k}">Copier</button>${k==="res"?`<a class="btn g" href="api/csv?offset=${offset}">Export CSV</a>`:""}</div></div><pre id="posttxt_${k}">${esc(x||"")}</pre></div>`).join("");
+ o.querySelectorAll("[data-cp]").forEach(b=>b.onclick=()=>navigator.clipboard.writeText($("#posttxt_"+b.dataset.cp).textContent).then(()=>{b.textContent="Copié ✓";setTimeout(()=>{b.textContent="Copier"},2000)}))}
+// ---- visuels (gardés en mémoire : changer d'onglet ne les recrée pas) ----
+const vcache={};
+function renderVisuel(){const o=sec("visuel");
+ if(!vmode)vmode=offset<0||(data&&!data.competitions.some(c=>(c.weekend_club||[]).some(m=>m.sd!=null)))?"programme":"resultats";
+ const vth=LS.get("ffhb_theme","bleu"),cle=offset+"|"+vmode+"|"+vth,e=vcache[cle];
+ const choix=`<div class="card"><div class="bar" style="margin:0"><div class="seg"><button class="${vmode==="resultats"?"on":""}" data-vm="resultats">Résultats</button><button class="${vmode==="programme"?"on":""}" data-vm="programme">Programme</button></div>
+   <div class="seg"><button class="${vth==="bleu"?"on":""}" data-th="bleu">Fond bleu</button><button class="${vth==="jaune"?"on":""}" data-th="jaune">Fond jaune</button></div>
+   <button class="g" id="vregen">↻ Recréer</button><span class="muted small">${data?"Week-end du "+dd(data.du)+" au "+dd(data.au):""}</span></div></div>`;
+ let corps;
+ if(!e||e.etat==="encours")corps=`<div class="card loader"><div class="spin"></div>Création des visuels… (quelques secondes)</div>`;
+ else if(e.etat==="err")corps=`<div class="card err">Erreur : ${esc(e.err)}</div>`;
+ else{const v=e.v,t=e.t;
+  corps=!v.fichiers.length?`<div class="card muted">${vmode==="programme"?"Aucun match du club à venir sur ce week-end.":"Aucun score du club ce week-end."}</div>`:
+  `<div class="card"><div class="head"><h2>${v.fichiers.length} visuel${v.fichiers.length>1?"s":""} (1080 × 1350)</h2>
+    <div class="bar" style="margin:0"><button id="wp">Publier dans les actualités du site</button></div></div><div id="wpmsg" class="small" style="margin:6px 0"></div>
+    <p class="muted small" style="margin:0 0 12px">Aussi enregistrés dans : ${esc(v.dossier)}</p>
+    <div class="gridv">${v.fichiers.map(f=>`<div><img class="img" loading="lazy" src="api/visuel.png?f=${encodeURIComponent(f)}&t=${t}" alt="${esc(f)}">
+     <a class="btn g" style="margin-top:6px;width:100%" href="api/visuel.png?f=${encodeURIComponent(f)}" download="${esc(f)}">Télécharger</a></div>`).join("")}</div></div>`}
+ o.innerHTML=choix+corps;
+ o.querySelectorAll("[data-vm]").forEach(b=>b.onclick=()=>{vmode=b.dataset.vm;renderVisuel()});
+ o.querySelectorAll("[data-th]").forEach(b=>b.onclick=()=>{LS.set("ffhb_theme",b.dataset.th);renderVisuel()});
+ $("#vregen").onclick=()=>{delete vcache[cle];renderVisuel()};
+ const wp=$("#wp");if(wp)wp.onclick=async()=>{const m=$("#wpmsg");wp.disabled=true;msg(m,"muted",spin+"Envoi des images et création de l'article…");setBusy("visuel",true);
+  try{const r=await api(`api/wordpress/publier?offset=${offset}&mode=${vmode}&theme=${vth}`,{method:"POST"});
+   if(r.erreur){msg(m,"err",esc(r.erreur)+' — <a href="#cfg" data-go="cfg">Réglages</a>');m.querySelector("[data-go]").onclick=x=>{x.preventDefault();go("cfg")}}
+   else msg(m,"ok",`✅ ${r.mise_a_jour?"Article mis à jour":"Article créé"} ${r.statut==="publish"?"et publié":"en brouillon"} (${r.images} image${r.images>1?"s":""}${r.categorie?", catégorie "+esc(r.categorie):""}) : <a href="${esc(r.statut==="publish"?r.lien:r.edition)}" target="_blank" rel="noopener">${r.statut==="publish"?"voir l'article":"ouvrir le brouillon"}</a>`)}
+  catch(x){msg(m,"err","Erreur : "+esc(x.message))}finally{wp.disabled=false;setBusy("visuel",false,"Article du week-end envoyé sur le site")}};
+ if(!e){vcache[cle]={etat:"encours"};setBusy("visuel",true);
+  api("api/visuels?offset="+offset+"&mode="+vmode+"&theme="+vth).then(v=>{vcache[cle]=v.erreur?{etat:"err",err:v.erreur}:{etat:"ok",v,t:Date.now()}})
+   .catch(x=>{vcache[cle]={etat:"err",err:x.message}})
+   .finally(()=>{setBusy("visuel",false,"<b>Visuels prêts</b>");const cur=offset+"|"+vmode+"|"+LS.get("ffhb_theme","bleu");if(view==="visuel"&&cur===cle)renderVisuel()})}}
+let affType="n1";
+function renderAffiche(){const o=sec("affiche");
+ o.innerHTML=`<div class="card"><h2>Affiche du prochain match à domicile</h2>
+  <div class="seg" style="margin:10px 0 4px"><button id="aft_n1" data-t="n1">N1 – Championnat</button><button id="aft_cdf" data-t="cdf">N1 – Coupe de France</button></div>
+  <p class="muted small" style="margin:6px 0 12px">À chaque clic, l'outil relit la FFHB (horaires, salle, match d'ouverture N3 M). Tant que la photo n'est pas validée, une nouvelle photo du dossier <b>affiche/photos</b> est prise à chaque fois ; une fois validée, elle reste pour ce match, même après avoir fermé le programme.</p>
+  <div class="bar"><button id="mkaff">Créer l'affiche</button><button class="g" id="valaff" style="display:none">Valider cette photo</button><button class="g" id="infaff" style="display:none">Rajouter infos sur l'affiche</button><span id="affmsg" class="small muted"></span></div>
+  <div id="affinf" class="card" style="display:none;margin-top:12px;background:var(--soft)">
+   <h3>Infos en plus sur l'affiche</h3>
+   <p class="muted small" style="margin:4px 0 8px">Une info par ligne (5 lignes max). S'il y a plusieurs lignes, la 1re sert de titre (en jaune). Elles s'affichent dans un encadré en haut à droite, avec la petite image à côté. Elles restent pour ce match.</p>
+   <textarea id="inftxt" rows="4" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit" placeholder="Ex. :&#10;Soirée spéciale&#10;Entrée gratuite&#10;Buvette et food truck sur place"></textarea>
+   <div class="bar" style="margin-top:8px;align-items:center"><label class="small">Petite image (logo, QR code…) : <input type="file" id="infimg" accept="image/*"></label>
+    <span id="infimgnow" class="small muted"></span></div>
+   <div class="bar" style="margin-top:10px"><button id="infsave">Enregistrer et mettre à jour l'affiche</button><button class="g" id="infclear">Tout effacer</button></div></div>
+  <div id="affres"></div></div>`;
+ let cur=null, infImg=null, sansImg=false, logoPrev="";
+ const u=f=>"api/visuel.png?f="+encodeURIComponent(f);
+ const lire=f=>new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=ko;r.readAsDataURL(f)});
+ const types=()=>["n1","cdf"].forEach(t=>{$("#aft_"+t).className=affType===t?"on":""});types();
+ const remplirInfos=r=>{const i=r.infos||{};$("#inftxt").value=i.texte||"";infImg=null;sansImg=false;$("#infimg").value="";
+  $("#infimgnow").innerHTML=i.image?`Image actuelle : ${esc(i.image)} <button class="g" id="infnoimg" style="padding:2px 8px">Retirer l'image</button>`:"";
+  const b=$("#infnoimg");if(b)b.onclick=()=>{sansImg=true;$("#infimgnow").textContent="L'image sera retirée."}};
+ const show=r=>{cur=r;const b=$("#mkaff"),v=$("#valaff");
+  b.textContent=r.photo_validee?"Mettre à jour l'affiche (même photo)":"Refaire avec une autre photo";
+  v.style.display="";v.textContent=r.photo_validee?"✓ Photo validée — changer de photo":"Valider cette photo";v.className=r.photo_validee?"g":"";
+  $("#infaff").style.display="";remplirInfos(r);
+  const t=Date.now(), eqs=(r.equipes||[]).filter(e=>!e.club);
+  $("#affres").innerHTML=`<div class="grid2" style="margin-top:8px">
+   <div><div class="muted small" style="margin-bottom:4px">Réseaux (4:5)</div><img src="${u(r.fichier)}&t=${t}" class="img">
+    <a href="${u(r.fichier)}" download="${esc(r.fichier)}"><button class="g" style="margin-top:6px;width:100%">Télécharger (PNG)</button></a></div>
+   ${r.fichier_a4?`<div><div class="muted small" style="margin-bottom:4px">A4 (impression)</div><img src="${u(r.fichier_a4)}&t=${t}" class="img">
+    <a href="${u(r.fichier_a4)}" download="${esc(r.fichier_a4)}"><button class="g" style="margin-top:6px;width:100%">Télécharger A4 (PNG)</button></a>
+    ${r.fichier_pdf?`<a href="api/visuel.pdf?f=${encodeURIComponent(r.fichier_pdf)}"><button class="g" style="margin-top:6px;width:100%">Télécharger A4 (PDF)</button></a>`:""}</div>`:""}
+   <div class="small"><p><b>${esc(r.match)}</b>${r.type_nom?`<br><span class="muted">${esc(r.type_nom)}</span>`:""}<br>${esc(new Date(r.date+"T12:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}))} à ${esc((r.heure||"?").replace(":","h"))}${r.tour?" · "+esc(r.tour):r.journee?" · Journée "+r.journee:""}<br>${esc(r.salle||"salle non trouvée")}</p>
+   <div style="margin:8px 0" class="bar"><label class="small">Horaire réel${r.heure_corrigee?" (corrigé)":""} : <input id="affh" value="${esc((r.heure||"").replace(":","h"))}" style="width:80px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit"></label><button class="g" id="affhok" style="padding:4px 10px">Corriger</button></div>
+   <p class="muted" style="margin-top:-4px">Si la FFHB n'affiche pas le bon horaire. Il est aussi corrigé sur les visuels programme et résultats ; vide = horaire de la FFHB.</p>
+   <p>${r.ouverture?"Ouverture : "+esc(r.ouverture):"Pas de match de N3 M en ouverture ce jour-là."}</p>
+   <p>${r.partenaire?"Partenaire du match : "+esc(r.partenaire):'<span class="err">Pas de logo de partenaire pour ce match (affiche/partenaires).</span>'}</p>
+   <div style="margin:10px 0"><b>Logos des adversaires</b>${eqs.map((e,k)=>`<div style="margin-top:6px">${e.logo?"✓":'<span class="err">✗ manquant</span>'} ${esc(e.nom)}${e.ouverture?' <span class="muted">(ouverture)</span>':""}<br>
+     <label class="small">${e.logo?"Changer le logo":"Ajouter le logo"} : <input type="file" accept="image/*" data-logo="${k}"></label></div>`).join("")}
+     <label class="small" style="display:block;margin-top:8px">Détourage : <select id="logodet" style="padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink);font:inherit">
+      <option value="auto">Fond autour du logo (recommandé)</option><option value="tout">Tout le fond, même dans les lettres</option><option value="non">Aucun (logo déjà détouré)</option></select></label>
+     <div id="logoprev"></div>
+     <p class="muted" style="margin-top:4px">PNG ou JPG (fond blanc, de couleur ou faux damier). Le logo est gardé pour les prochaines affiches. Si le résultat ne va pas, change le mode et renvoie le logo.</p></div>
+   <p class="muted">Photo : ${esc(r.photo)}${r.photo_validee?" (validée)":""}<br>Horaires vérifiés à ${esc(r.lu_a||"?")}<br>Enregistrée dans : ${esc(r.dossier)}</p></div></div>`;
+  $("#affhok").onclick=async()=>{const msg=$("#affmsg");
+   const r2=await (await fetch("api/horaire",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({date:cur.date,dom:cur.dom,ext:cur.ext,heure:$("#affh").value})})).json();
+   if(r2.erreur){msg.className="small err";msg.textContent=r2.erreur;return}
+   creer({photo:cur.photo,relire:0},"Horaire enregistré, mise à jour de l'affiche…")};
+  if(logoPrev&&$("#logoprev"))$("#logoprev").innerHTML=logoPrev;
+  document.querySelectorAll("[data-logo]").forEach(inp=>inp.onchange=async()=>{const f=inp.files[0];if(!f)return;const e=eqs[+inp.dataset.logo],msg=$("#affmsg");
+   try{const r2=await (await fetch("api/affiche/logo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom:e.nom,data:await lire(f),detourer:$("#logodet").value})})).json();
+    if(r2.erreur){msg.className="small err";msg.textContent=r2.erreur;return}
+    logoPrev=`<div class="small" style="margin-top:8px">Logo enregistré${r2.detoure?" (détouré)":""} :<div style="margin-top:4px;display:inline-block;padding:10px;border-radius:8px;background:#061d4e"><img src="${r2.apercu}" style="height:90px;display:block"></div></div>`;$("#logoprev").innerHTML=logoPrev;
+    creer({photo:cur.photo,relire:0},"Logo de "+e.nom+(r2.detoure?" détouré et":"")+" enregistré, mise à jour de l'affiche…")}catch(x){msg.className="small err";msg.textContent="Erreur : "+x.message}})};
+ const charger=()=>{cur=null;$("#affres").innerHTML="";["valaff","infaff"].forEach(i=>$("#"+i).style.display="none");$("#affinf").style.display="none";$("#mkaff").textContent="Créer l'affiche";$("#affmsg").textContent="";
+  fetch("api/affiche/derniere?type="+affType).then(r=>r.json()).then(r=>{if(r&&r.fichier){show(r);$("#affmsg").className="small muted";$("#affmsg").textContent="Dernière affiche créée."}}).catch(()=>{})};
+ const creer=async(opt,texte)=>{opt=opt||{};const b=$("#mkaff"),v=$("#valaff"),msg=$("#affmsg");b.disabled=v.disabled=true;setBusy("affiche",true);let fin="";msg.className="small muted";
+  msg.innerHTML='<span class="spin" style="display:inline-block;vertical-align:middle;width:14px;height:14px"></span> '+esc(texte||"Relecture de la FFHB et création des deux formats… (environ 1 minute)");
+  try{const r=await (await fetch("api/affiche?type="+affType+(opt.photo?"&photo="+encodeURIComponent(opt.photo):"")+(opt.relire===0?"&relire=0":""))).json();
+   if(r.erreur){msg.className="small err";msg.textContent="Erreur : "+r.erreur;return}
+   msg.className="small";msg.textContent="✅ Affiche à jour (FFHB vérifiée à "+r.lu_a+")";show(r);fin="<b>Affiche prête</b>"}
+  catch(e){msg.className="small err";msg.textContent="Erreur : "+e.message}finally{b.disabled=v.disabled=false;setBusy("affiche",false,fin)}};
+ ["n1","cdf"].forEach(t=>$("#aft_"+t).onclick=()=>{if(affType===t||occupe.affiche)return;affType=t;types();charger()});
+ charger();
+ $("#mkaff").onclick=()=>creer();
+ $("#infaff").onclick=()=>{const p=$("#affinf");p.style.display=p.style.display==="none"?"":"none";if(p.style.display==="")$("#inftxt").focus()};
+ $("#infimg").onchange=async()=>{const f=$("#infimg").files[0];infImg=f?await lire(f):null;if(f){sansImg=false;$("#infimgnow").textContent="Nouvelle image : "+f.name}};
+ const envoyerInfos=async(texte,image,sans)=>{if(!cur)return;const msg=$("#affmsg");
+  const r=await (await fetch("api/affiche/infos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({type:affType,date:cur.date,texte,image,sans_image:sans})})).json();
+  if(r.erreur){msg.className="small err";msg.textContent=r.erreur;return}
+  creer({photo:cur.photo,relire:0},"Infos enregistrées, mise à jour de l'affiche…")};
+ $("#infsave").onclick=()=>envoyerInfos($("#inftxt").value,infImg,sansImg);
+ $("#infclear").onclick=()=>{if(confirm("Retirer toutes les infos en plus de cette affiche ?"))envoyerInfos("",null,true)};
+ $("#valaff").onclick=async()=>{if(!cur)return;const msg=$("#affmsg");
+  if(!cur.photo_validee){const r=await (await fetch(`api/affiche/valider?date=${cur.date}&photo=${encodeURIComponent(cur.photo)}`,{method:"POST"})).json();
+   if(r.erreur){msg.className="small err";msg.textContent=r.erreur;return}
+   show(Object.assign(cur,{photo_validee:true}));msg.className="small";msg.textContent="✅ Photo validée : elle restera sur l'affiche de ce match."}
+  else{await fetch(`api/affiche/devalider?date=${cur.date}`,{method:"POST"});cur.photo_validee=false;creer()}};
+}
+function renderEcran(){const o=sec("ecran");
+ o.innerHTML=`<div class="card"><h2>Écran géant : vidéos « Prochain match »</h2>
+  <p class="muted small" style="margin:6px 0 12px">Une vidéo par Nationale (N1, N3 M, N3 F) pour le prochain match à domicile : 1920 × 1080, 10 secondes, en boucle, sans son. L'outil relit la FFHB (horaires, salle) avant de les créer.</p>
+  <div class="bar"><button id="mkec">Créer les vidéos</button><span id="ecmsg" class="small muted"></span></div><div id="ecres"></div></div>`;
+ const show=r=>{const t=Date.now();
+  $("#ecres").innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:8px">${r.videos.map(v=>v.erreur?
+   `<div class="card"><h3 style="margin-top:0">${esc(v.equipe)}</h3><p class="muted small">${esc(v.erreur)}</p></div>`:
+   `<div><h3 style="margin:0 0 6px">${esc(v.equipe)}</h3>
+    <video src="api/visuel.mp4?f=${encodeURIComponent(v.fichier)}&t=${t}" poster="api/visuel.jpg?f=${encodeURIComponent(v.apercu)}&t=${t}" controls loop muted playsinline style="width:100%;border-radius:8px;border:1px solid var(--line);background:#000"></video>
+    <a href="api/visuel.mp4?f=${encodeURIComponent(v.fichier)}&dl=1" download="${esc(v.fichier)}"><button class="g" style="margin-top:6px;width:100%">Télécharger la vidéo (MP4)</button></a>
+    <p class="small" style="margin:8px 0 0"><b>${esc(v.match)}</b><br>${esc(new Date(v.date+"T12:00").toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"}))} à ${esc((v.heure||"?").replace(":","h"))} · ${esc(v.salle||"salle non trouvée")}</p>
+    ${v.logos_manquants&&v.logos_manquants.length?`<p class="err small">Logo introuvable pour : ${v.logos_manquants.map(esc).join(", ")} (affiche/logos + logos.json).</p>`:""}</div>`).join("")}</div>
+   <p class="muted small" style="margin-top:10px">Enregistrées dans : ${esc(r.dossier||"")}</p>`};
+ fetch("api/ecran/dernieres").then(r=>r.json()).then(r=>{if(r.videos&&r.videos.length){show(r);$("#ecmsg").textContent="Dernières vidéos créées (horaires vérifiés à "+r.lu_a+")."}}).catch(()=>{});
+ $("#mkec").onclick=async()=>{const b=$("#mkec"),msg=$("#ecmsg");b.disabled=true;setBusy("ecran",true);let fin="";msg.className="small muted";msg.innerHTML='<span class="spin" style="display:inline-block;vertical-align:middle;width:14px;height:14px"></span> Relecture de la FFHB puis création des vidéos… (2 à 4 minutes)';
+  try{const r=await (await fetch("api/ecran")).json();
+   if(r.erreur){msg.className="small err";msg.textContent="Erreur : "+r.erreur;return}
+   msg.className="small";msg.textContent="✅ Horaires vérifiés sur la FFHB à "+r.lu_a;show(r);fin="<b>Vidéos écran géant prêtes</b>"}
+  catch(e){msg.className="small err";msg.textContent="Erreur : "+e.message}finally{b.disabled=false;setBusy("ecran",false,fin)}};
+}
+function renderArticle(){const o=sec("article");let photos=[];
+ o.innerHTML=`<div class="card"><h2>Nouvel article pour le site</h2>
+  <p class="muted small" style="margin:6px 0 12px">Écris ce que tu veux dire, même en vrac et avec des fautes, et ajoute tes photos. L'IA (Gemini ou Claude, au choix dans Réglages) corrige et rédige l'article (sans inventer de faits), puis le crée <b>en brouillon</b> sur le site : l'IA lit aussi le texte présent sur les images (affiche, score, feuille de match). Un <b>visuel de couverture au format du site</b> est créé avec la photo choisie et l'info principale ; toutes les photos vont dans la galerie.</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+   <div><h3>Rubrique (Actualités)</h3><select id="atype" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">
+    <option value="match" selected>Matchs</option><option value="jeunes">Équipes jeunes</option><option value="club">Vie du club</option><option value="partenaire">Partenaires</option></select></div>
+</div>
+  <h3>Ton texte</h3><textarea id="atexte" rows="10" placeholder="ex. : victoire des -15 filles contre bron samedi 24-18, super match défense, merci aux parents pour le gouter, prochain match le 7 nov a lachaise"></textarea>
+  <h3>Photos</h3><input type="file" id="aphotos" accept="image/*" multiple style="padding:6px">
+  <div id="avign" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+  <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:12px"><input type="checkbox" id="acouv" checked style="width:auto"> Créer le visuel de couverture (image à la une au bon format)</label>
+  <div class="bar" style="margin-top:14px"><button id="ago">Rédiger et créer le brouillon</button><span id="amsg" class="small muted"></span></div>
+  <div id="ares"></div></div>`;
+ 
+ // photos réduites à 2000 px (JPEG) dans le navigateur avant l'envoi
+ const reduire=f=>new Promise((ok,ko)=>{const u=URL.createObjectURL(f),im=new Image();im.onload=()=>{const k=Math.min(1,2000/Math.max(im.width,im.height));
+  const c=document.createElement("canvas");c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext("2d").drawImage(im,0,0,c.width,c.height);const k2=Math.min(1,1280/Math.max(im.width,im.height)),c2=document.createElement("canvas");c2.width=Math.round(im.width*k2);c2.height=Math.round(im.height*k2);c2.getContext("2d").drawImage(im,0,0,c2.width,c2.height);
+  URL.revokeObjectURL(u);ok({nom:f.name,data:c.toDataURL("image/jpeg",.86),ia:c2.toDataURL("image/jpeg",.8)})};im.onerror=ko;im.src=u});
+ const vign=()=>{$("#avign").innerHTML=photos.map((p,i)=>`<div style="position:relative"><img src="${p.data}" style="height:90px;border-radius:6px;border:${i===0?"3px solid var(--accent)":"1px solid var(--line)"}">
+   ${i===0?'<span class="small" style="position:absolute;left:4px;bottom:4px;background:var(--accent);color:var(--on);padding:0 4px;border-radius:4px;font-size:10px">couverture</span>':`<button class="g" data-une="${i}" style="position:absolute;left:4px;bottom:4px;padding:0 4px;font-size:10px">couverture</button>`}
+   <button class="g" data-del="${i}" style="position:absolute;right:4px;top:4px;padding:0 6px">✕</button></div>`).join("");
+  o.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{photos.splice(+b.dataset.del,1);vign()});
+  o.querySelectorAll("[data-une]").forEach(b=>b.onclick=()=>{const [p]=photos.splice(+b.dataset.une,1);photos.unshift(p);vign()})};
+ $("#aphotos").onchange=async e=>{const m=$("#amsg");m.className="small muted";m.textContent="Préparation des photos…";
+  for(const f of e.target.files){try{photos.push(await reduire(f))}catch(x){}}e.target.value="";m.textContent="";vign()};
+ $("#ago").onclick=async()=>{const b=$("#ago"),m=$("#amsg"),t=$("#atexte").value.trim();
+  if(t.length<15&&!photos.length){m.className="small err";m.textContent="Écris au moins quelques phrases (ou ajoute une image avec les infos).";return}
+  b.disabled=true;setBusy("article",true);m.className="small muted";m.innerHTML='<span class="spin" style="display:inline-block;vertical-align:middle;width:14px;height:14px"></span> Rédaction puis envoi'+(photos.length?" des "+photos.length+" photo(s)":"")+"…";
+  try{const r=await (await fetch("api/article",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({texte:t,type:$("#atype").value,photos,couverture:$("#acouv").checked})})).json();
+   if(r.erreur){m.className="small err";m.innerHTML=esc(r.erreur)+(/Réglages/.test(r.erreur)?' — <a href="#" id="goreg">Réglages</a>':"");const g=$("#goreg");if(g)g.onclick=e=>{e.preventDefault();go("cfg")};return}
+   m.className="small";m.innerHTML=`✅ Brouillon créé (${r.images} photo${r.images>1?"s":""}). Relis ci-dessous, puis <button id="apub" style="padding:4px 10px">Publier sur le site</button> ou <a href="${esc(r.edition)}" target="_blank" rel="noopener">modifier dans WordPress</a>`;
+   $("#apub").onclick=async()=>{const pb=$("#apub");pb.disabled=true;pb.textContent="Publication…";
+    try{const q=await (await fetch("api/article/publier?id="+r.id,{method:"POST"})).json();
+     if(q.erreur){m.className="small err";m.textContent="Erreur : "+q.erreur;return}
+     m.className="small";m.innerHTML=`✅ Publié : <a href="${esc(q.lien)}" target="_blank" rel="noopener">voir l'article sur le site</a> · `+
+      (q.visible===true?`visible sur la page <a href="${esc(q.page_actualites)}" target="_blank" rel="noopener">Actualités</a>`:
+       q.visible===false?`<span class="err">⚠️ n'apparaît pas sur la page <a href="${esc(q.page_actualites)}" target="_blank" rel="noopener">Actualités</a> : vérifie le bloc de la page Actualités dans WordPress.</span>`:
+       `vérifie la page <a href="${esc(q.page_actualites)}" target="_blank" rel="noopener">Actualités</a>`)}
+    catch(e){m.className="small err";m.textContent="Erreur : "+e.message}};
+   $("#ares").innerHTML=(r.couverture?`<div style="margin-top:12px"><div class="muted small" style="margin-bottom:4px">Image à la une créée :</div><img src="${r.couverture_url?esc(r.couverture_url):"api/visuel.png?f="+encodeURIComponent(r.couverture)+"&t="+Date.now()}" style="width:100%;max-width:600px;border-radius:8px;border:1px solid var(--line)"></div>`:"")+`<div class="card" style="margin-top:12px;background:var(--soft)"><h2>${esc(r.titre)}</h2><p class="muted small" style="margin:4px 0 10px">${esc(r.extrait)}</p>
+    ${r.blocs.map(x=>x.type==="intertitre"?`<h3 style="text-transform:none;font-size:15px;color:var(--ink)">${esc(x.texte)}</h3>`:`<p>${x.type==="chapeau"?"<b>"+esc(x.texte)+"</b>":esc(x.texte)}</p>`).join("")}
+    ${r.remarques?`<p class="small" style="color:var(--draw)">⚠️ À vérifier : ${esc(r.remarques)}</p>`:""}</div>`}
+  catch(e){m.className="small err";m.textContent="Erreur : "+e.message}finally{b.disabled=false;setBusy("article",false,m.className==="small"?"<b>Brouillon d'article créé</b>":"")}};
+}
+function carteGH(){if(!GH)return"";const ok=GHWEB.connecte();
+ return`<div class="card" style="border-color:${ok?"var(--win)":"var(--draw)"}"><h2>Connexion administrateur</h2>
+ <p class="muted small" style="margin:6px 0 10px">${ok?"✅ Ce téléphone / navigateur est connecté : tu peux créer, publier et régler.":"Pour créer des affiches, publier, écrire des articles ou changer les réglages, connecte ce téléphone une fois avec ton <b>jeton GitHub</b> (il reste uniquement dans ce navigateur)."}</p>
+ ${ok?`<div class="bar"><button class="g mini" id="ghout">Déconnecter ce navigateur</button><span class="small muted" id="ghinfo"></span></div>`:`
+ <details><summary style="font-size:14px;color:var(--ink);font-weight:600;margin:0 0 8px">Comment créer le jeton (2 minutes)</summary><ol class="small" style="padding-left:18px;margin:6px 0 10px">
+  <li>Ouvre <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a> (connecté à GitHub).</li>
+  <li><b>Token name</b> : outil-crhb · <b>Expiration</b> : la plus longue proposée (ou « No expiration »).</li>
+  <li><b>Repository access</b> : « Only select repositories » → <b>outil-crhb</b>.</li>
+  <li><b>Permissions</b> → « Repository permissions » : <b>Actions</b>, <b>Contents</b>, <b>Secrets</b> et <b>Variables</b> sur « Read and write ».</li>
+  <li><b>Generate token</b>, copie le texte qui commence par <b>github_pat_</b> et colle-le ci-dessous.</li></ol></details>
+ <div class="bar"><input id="ghtokp" type="password" placeholder="github_pat_..." autocomplete="off" style="flex:1;min-width:200px"><button id="ghin">Connecter</button></div><div id="ghinfo" class="small"></div>`}</div>`}
+function lierGH(){if(!GH)return;const o=$("#ghout");if(o)o.onclick=()=>{GHWEB.deconnecter();init.cfg=0;renderCfg()};
+ const b=$("#ghin");if(b)b.onclick=async()=>{const m=$("#ghinfo");msg(m,"muted",spin+"Vérification…");
+  try{await GHWEB.connecter($("#ghtokp").value.trim());init.cfg=0;renderCfg();toast("<b>Connecté</b> : toutes les fonctions sont disponibles.")}catch(x){msg(m,"err",esc(x.message))}}}
+function renderCfg(){const c=cfg||{club:"",competitions:[]};const w=Object.assign({site:"https://caluirerillieuxhandball.fr",utilisateur:"",mot_de_passe:"",categorie:"Matchs",statut:"draft"},c.wordpress||{});
+ sec("cfg").innerHTML=carteGH()+`<div class="card"><h2>Site du club (WordPress)</h2>
+ <p class="muted small" style="margin:6px 0 0">Mot de passe d'application : dans WordPress, <b>Utilisateurs → Profil → Mots de passe d'application</b>, nom « Outil FFHB », puis <b>Ajouter</b>. Il reste sur ton ordinateur.</p>
+ <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:10px">
+  <div><h3>Adresse du site</h3><input id="wsite" value="${esc(w.site)}"></div>
+  <div><h3>Identifiant WordPress</h3><input id="wuser" value="${esc(w.utilisateur)}" autocomplete="off"></div>
+  <div><h3>Mot de passe d'application</h3><input id="wpass" type="password" value="${esc(w.mot_de_passe)}" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx" autocomplete="new-password"></div>
+  <div><h3>À la publication</h3><select id="wstat" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">
+   <option value="draft" ${w.statut!=="publish"?"selected":""}>Brouillon (je valide sur le site)</option><option value="publish" ${w.statut==="publish"?"selected":""}>Publier directement</option></select></div></div>
+ <div class="bar" style="margin-top:12px"><button id="wsave">Enregistrer et tester la connexion</button><span id="wtest" class="small"></span></div></div>
+ <div class="card"><h2>Rédaction d'articles (IA)</h2>
+ <p class="muted small" style="margin:6px 0 0" id="iaaide"></p>
+ <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px">
+  <div><h3>Moteur</h3><select id="imot" style="width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit">
+   <option value="gemini">Google Gemini (gratuit)</option><option value="claude">Claude (payant)</option></select></div>
+  <div><h3>Clé API</h3><input id="ikey" type="password" autocomplete="new-password"></div>
+  <div><h3>Modèle (vide = automatique)</h3><input id="imod" placeholder="automatique"></div></div>
+ <div class="bar" style="margin-top:12px"><button id="isave">Enregistrer et tester</button><span id="itest" class="small"></span></div></div>
+ <div class="card"><h2>Réglages</h2><h3>Club (mots-clés séparés par des virgules)</h3><input id="club" value="${esc(c.club)}">
+ <h3>Compétitions (lien d'une page poule ou équipe sur ffhandball.fr)</h3><div id="rows">${c.competitions.map((x,i)=>`<div class="row"><input data-i="${i}" data-k="nom" value="${esc(x.nom)}" placeholder="Nom"><input data-i="${i}" data-k="url" value="${esc(x.url)}" placeholder="https://www.ffhandball.fr/competitions/..."><button class="g" data-del="${i}">✕</button><span></span><input data-i="${i}" data-k="club" value="${esc(x.club||"")}" placeholder="Nom de l'équipe si entente (sinon laisser vide)" style="font-size:13px"><span></span></div>`).join("")}</div>
+ <div class="bar"><button class="g" id="add">+ Ajouter</button><button id="save">Enregistrer et lire</button></div></div>`;
+ lierGH();
+ const sync=()=>{c.club=$("#club").value;document.querySelectorAll("#rows input").forEach(i=>c.competitions[i.dataset.i][i.dataset.k]=i.value)};
+ $("#add").onclick=()=>{sync();c.competitions.push({nom:"",url:""});renderCfg()};
+ document.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{sync();c.competitions.splice(+b.dataset.del,1);renderCfg()});
+ $("#save").onclick=async()=>{sync();c.competitions=c.competitions.filter(x=>x.url.trim());
+  await fetch("api/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(c)});cfg=c;rendu.club=rendu.all=rendu.accueil=-1;go("club");load(true)};
+ const ia=Object.assign({moteur:"gemini",cles:{},modeles:{}},c.ia||{});ia.cles=Object.assign({},ia.cles);ia.modeles=Object.assign({},ia.modeles);
+ if(!ia.cles.claude&&(c.claude||{}).cle)ia.cles.claude=c.claude.cle;
+ const AIDE={gemini:"Gratuit : va sur <b>aistudio.google.com</b> avec un compte Google → <b>Get API key</b> → <b>Create API key</b>, puis colle la clé ici. Elle reste sur ton ordinateur ; ne l'envoie à personne.",
+  claude:"Payant (quelques centimes par article) : <b>console.anthropic.com</b> → <b>API Keys</b> → <b>Create Key</b>, compte à créditer dans <b>Billing</b>. La clé reste sur ton ordinateur."};
+ const montre=()=>{const m=$("#imot").value;$("#ikey").value=ia.cles[m]||"";$("#imod").value=ia.modeles[m]||"";$("#ikey").placeholder=m==="gemini"?"AIza...":"sk-ant-...";$("#iaaide").innerHTML=AIDE[m]};
+ const lit=()=>{const m=$("#imot").value;ia.cles[m]=$("#ikey").value.trim();ia.modeles[m]=$("#imod").value.trim()};
+ $("#imot").value=ia.moteur;montre();
+ $("#imot").onchange=()=>{const anc=ia.moteur;ia.cles[anc]=$("#ikey").value.trim();ia.modeles[anc]=$("#imod").value.trim();ia.moteur=$("#imot").value;montre()};
+ $("#isave").onclick=async()=>{const t=$("#itest");t.className="small muted";t.textContent="Test en cours…";lit();ia.moteur=$("#imot").value;c.ia=ia;
+  await fetch("api/ia/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(ia)});
+  try{const r=await (await fetch("api/ia/test",{method:"POST"})).json();
+   if(r.erreur){t.className="small err";t.textContent=r.erreur}else{t.className="small";t.textContent="✅ "+r.moteur+" connecté · modèle : "+r.modele}}
+  catch(e){t.className="small err";t.textContent="Erreur : "+e.message}};
+ $("#wsave").onclick=async()=>{const t=$("#wtest");t.className="small muted";t.textContent="Test en cours…";
+  const nw={site:$("#wsite").value.trim(),utilisateur:$("#wuser").value.trim(),mot_de_passe:$("#wpass").value.trim(),categorie:"Matchs",statut:$("#wstat").value};
+  c.wordpress=nw;await fetch("api/wordpress/config",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(nw)});
+  try{const r=await (await fetch("api/wordpress/test",{method:"POST"})).json();
+   if(r.erreur){t.className="small err";t.textContent=r.erreur}
+   else{t.className="small";t.textContent=`✅ Connecté en tant que ${r.nom}`+(r.categorie?` · catégorie « ${r.categorie} » trouvée`:` · ⚠️ catégorie « ${nw.categorie} » introuvable (l'article ira dans la catégorie par défaut)`)}}
+  catch(e){t.className="small err";t.textContent="Erreur : "+e.message}};
+}
+// ---- articles du site : liste + suppression ----
+function renderArticles(){const o=sec("articles");
+ o.innerHTML=`<div class="card"><div class="head"><h2>Articles publiés sur le site</h2><button class="g mini" id="arecharger">↻ Recharger la liste</button></div>
+  <p class="muted small" style="margin:6px 0 12px">Les 60 derniers articles du site (publiés, brouillons, programmés). Choisis-en un pour le voir, le modifier dans WordPress ou le supprimer.</p>
+  <select id="asel"><option>Chargement…</option></select>
+  <div id="adet" style="margin-top:12px"></div><div id="amsg2" class="small"></div></div>`;
+ let liste=[];const ST={publish:"publié",draft:"brouillon",future:"programmé",pending:"en attente",private:"privé"};
+ const detail=()=>{const a=liste.find(x=>String(x.id)===$("#asel").value);const d=$("#adet");if(!a){d.innerHTML="";return}
+  d.innerHTML=`<div class="card soft" style="margin:0"><b>${esc(a.titre)}</b><div class="pills" style="margin:6px 0 10px"><span class="pill ${a.statut==="publish"?"v":"o"}">${ST[a.statut]||a.statut}</span><span class="pill">${esc(a.date.replace("T"," à "))}</span>${a.rubrique?`<span class="pill">${esc(a.rubrique)}</span>`:""}</div>
+   <div class="bar" style="margin:0"><a class="btn g" href="${esc(a.lien)}" target="_blank" rel="noopener">Voir sur le site</a><a class="btn g" href="${esc(a.edition)}" target="_blank" rel="noopener">Modifier dans WordPress</a>
+   <button id="adel" style="background:var(--loss)">Supprimer l'article</button></div>
+   <label class="small" style="display:flex;gap:8px;align-items:center;margin-top:10px"><input type="checkbox" id="adef"> Supprimer définitivement, avec ses images (sinon : corbeille de WordPress, récupérable 30 jours)</label></div>`;
+  $("#adel").onclick=async()=>{const def=$("#adef").checked,m=$("#amsg2");
+   if(!confirm(`${def?"Supprimer DÉFINITIVEMENT":"Mettre à la corbeille"} l'article « ${a.titre} » ?`))return;
+   $("#adel").disabled=true;msg(m,"muted",spin+"Suppression…");
+   try{const r=await post("api/wp/supprimer",{id:a.id,definitif:def});
+    if(r.erreur){msg(m,"err","Erreur : "+esc(r.erreur));$("#adel").disabled=false;return}
+    msg(m,"ok",`✅ « ${esc(a.titre)} » ${def?"supprimé définitivement"+(r.images?" (avec "+r.images+" image"+(r.images>1?"s":"")+")":""):"mis à la corbeille (récupérable dans WordPress > Articles > Corbeille)"}.`);charger()}
+   catch(x){msg(m,"err","Erreur : "+esc(x.message));$("#adel").disabled=false}}};
+ const charger=async(force)=>{const s=$("#asel");s.innerHTML="<option>Chargement…</option>";s.disabled=true;
+  try{const r=await api("api/wp/articles"+(force===true?"?force=1":""));
+   if(r.erreur){s.innerHTML="<option>—</option>";$("#adet").innerHTML=`<p class="err small">${esc(r.erreur)} — <a href="#cfg" data-go="cfg">Réglages</a></p>`;$("#adet [data-go]").onclick=e=>{e.preventDefault();go("cfg")};return}
+   liste=r.articles;s.innerHTML=`<option value="">— Choisis un article (${liste.length}) —</option>`+liste.map(a=>`<option value="${a.id}">${esc(a.date.slice(0,10).split("-").reverse().join("/"))} · ${esc(a.titre)}${a.statut!=="publish"?" ("+(ST[a.statut]||a.statut)+")":""}</option>`).join("");
+   s.disabled=false;s.onchange=detail;detail()}
+  catch(x){s.innerHTML="<option>—</option>";$("#adet").innerHTML=`<p class="err small">Erreur : ${esc(x.message)}</p>`}};
+ $("#arecharger").onclick=()=>charger(true);charger()}
+// ---- publication automatique (GitHub) ----
+function renderAuto(){const o=sec("auto");
+ o.innerHTML=`<div class="card"><h2>Où se fait la publication automatique ?</h2>
+  <p class="muted small" style="margin:6px 0 10px">Résultats chaque <b>mardi à 10 h</b>, programme chaque <b>mercredi à 18 h</b>, sans ouvrir l'outil.</p>
+  <div class="seg"><button data-ou="local">${CLOUD?"Sur le serveur en ligne":"Sur cet ordinateur"}</button><button data-ou="github">Sur GitHub</button></div>
+  <p class="small muted" id="oudesc" style="margin:10px 0 0"></p></div>
+  <div id="locpanel" style="display:none"><div class="card"><h2>Publication depuis ${CLOUD?"le serveur en ligne":"cet ordinateur"}</h2><div id="locc"><div class="loader" style="margin-top:12px"><div class="spin"></div>Chargement…</div></div><div id="locmsg" class="small" style="margin-top:8px"></div></div></div>
+  <div id="ghpanel" style="display:none">
+  <div class="card"><h2>Publication automatique sur GitHub</h2>
+  <p class="muted small" style="margin:6px 0 4px">Ces publications tournent sur GitHub : elles se font même quand ton ordinateur est éteint et l'outil fermé. Ici tu peux les activer ou les couper, choisir brouillon ou publication directe, et en lancer une tout de suite.</p>
+  <div id="autoc"><div class="loader" style="margin-top:12px"><div class="spin"></div>Lecture de l'état sur GitHub…</div></div><div id="automsg" class="small" style="margin-top:8px"></div></div>
+  <div class="card"><details id="ghdet"><summary style="font-size:15px;color:var(--ink);font-weight:600;margin:0">Connexion à GitHub</summary>
+   <p class="muted small">Une seule fois. 1) Sur GitHub : photo de profil → <b>Settings</b> → <b>Developer settings</b> → <b>Personal access tokens</b> → <b>Fine-grained tokens</b> → <b>Generate new token</b>. 2) Nom « Outil CRHB », expiration la plus longue possible, <b>Repository access</b> : « Only select repositories » → ton dépôt de l'outil. 3) <b>Permissions</b> du dépôt : <b>Actions</b> = Read and write, <b>Variables</b> = Read and write. 4) <b>Generate token</b>, copie-le et colle-le ci-dessous. Il reste sur ton ordinateur : ne l'envoie à personne.</p>
+   <div class="grid2" style="margin-top:8px"><div><h3>Dépôt (pseudo/nom-du-dépôt)</h3><input id="ghdep" placeholder="ex. ethan-crhb/outil-ffhb"></div>
+   <div><h3>Jeton d'accès</h3><input id="ghtok" type="password" autocomplete="new-password" placeholder="github_pat_..."></div></div>
+   <div class="bar" style="margin-top:12px"><button id="ghsave">Enregistrer et tester</button><span id="ghmsg" class="small"></span></div></details></div></div>`;
+ const DESC={local:CLOUD?"Le serveur en ligne publie tout seul, même ordinateur éteint. Une publication ratée (serveur arrêté ou en veille) est rattrapée jusqu'au jeudi soir.":"L'ordinateur doit être <b>allumé ou en veille</b> à ces heures (pas éteint) ; l'outil et Chrome n'ont pas besoin d'être ouverts. Une publication ratée parce que l'ordinateur était éteint est rattrapée au prochain démarrage (jusqu'au jeudi soir). Pas de compte GitHub nécessaire.",
+  github:GH?"GitHub publie tout seul sur le site, même ordinateur éteint.":"Publie même quand l'ordinateur est <b>éteint</b>. Demande un dépôt GitHub (déjà préparé dans FFHB_GitHub.zip) et un jeton d'accès."};
+ const HEURE={resultats:"Résultats du week-end — chaque <b>mardi à 10 h</b>",programme:"Programme du week-end suivant — chaque <b>mercredi à 18 h</b>"};
+ let ou="github";
+ const choisir=(v,enreg)=>{ou=v;o.querySelectorAll("[data-ou]").forEach(b=>b.classList.toggle("on",b.dataset.ou===v));$("#oudesc").innerHTML=DESC[v];
+  $("#locpanel").style.display=v==="local"?"":"none";$("#ghpanel").style.display=v==="github"?"":"none";
+  if(enreg)post("api/auto/local",{mode_auto:v}).then(montrerLoc).catch(()=>{});
+  if(v==="github"&&!ghCharge){ghCharge=1;charger()}};
+ let ghCharge=0;
+ o.querySelectorAll("[data-ou]").forEach(b=>b.onclick=()=>choisir(b.dataset.ou,true));
+ const montrerLoc=e=>{const c=$("#locc");if(!c)return;if(e.erreur)msg($("#locmsg"),"err",esc(e.erreur));
+  c.innerHTML=`${e.avertissement?`<p class="err small">⚠️ ${esc(e.avertissement)}</p>`:""}
+   ${["resultats","programme"].map(m=>`<div class="autol"><label class="sw"><input type="checkbox" data-loc="${m}" ${e.modes[m]?"checked":""}><i></i><span><b>${m==="resultats"?"Résultats":"Programme"}</b> · <span class="small">${e.modes[m]?'<span class="ok">activée</span>':'<span class="muted">désactivée</span>'}</span><br><span class="small muted">${HEURE[m]}</span></span></label>
+    <button class="g mini" data-locnow="${m}">Publier maintenant</button></div>`).join("")}
+   <div class="autol"><span><b>Les articles automatiques sont…</b><br><span class="small muted">Brouillon : tu valides sur le site. Publiés : en ligne directement.</span></span>
+    <div class="seg"><button data-locst="draft" class="${e.statut_publication!=="publish"?"on":""}">En brouillon</button><button data-locst="publish" class="${e.statut_publication==="publish"?"on":""}">Publiés directement</button></div></div>
+   <p class="small ${e.planificateur?"ok":"muted"}" style="margin:10px 0 0">${CLOUD?"✅ Le serveur vérifie toutes les 5 minutes s'il y a une publication à faire.":e.planificateur?`✅ Programmé dans ${e.systeme==="Windows"?"le Planificateur de tâches de Windows":e.systeme==="Mac"?"macOS (lancement automatique)":"le système"}.`:"Aucune publication programmée sur cet ordinateur."}</p>
+   <h3>Dernières publications</h3>${(e.journal||[]).length?e.journal.map(j=>`<div class="small" style="padding:5px 0;border-bottom:1px solid var(--line)">${esc(j.date.split(" ")[0].split("-").reverse().join("/"))} ${esc(j.date.split(" ")[1]||"")} · ${j.mode==="resultats"?"Résultats":"Programme"} · ${esc(j.source||"")} · ${j.ok?'<span class="ok">✅ '+esc(j.message)+'</span>':'<span class="err">❌ '+esc(j.message)+'</span>'}${j.lien?` · <a href="${esc(j.lien)}" target="_blank" rel="noopener">voir</a>`:""}</div>`).join(""):'<p class="muted small">Aucune pour l\'instant.</p>'}`;
+  c.querySelectorAll("[data-loc]").forEach(i=>i.onchange=async()=>{const m=$("#locmsg");msg(m,"muted",spin+"Enregistrement…");
+   try{const r=await post("api/auto/local",{mode:i.dataset.loc,actif:i.checked,mode_auto:"local"});montrerLoc(r);
+    if(!r.erreur)msg(m,"ok",`✅ Publication automatique ${i.dataset.loc==="resultats"?"des résultats":"du programme"} ${i.checked?"activée sur cet ordinateur":"désactivée"}.`)}catch(x){msg(m,"err",esc(x.message))}});
+  c.querySelectorAll("[data-locst]").forEach(b=>b.onclick=async()=>{try{montrerLoc(await post("api/auto/local",{statut:b.dataset.locst}));msg($("#locmsg"),"ok","✅ Enregistré.")}catch(x){}});
+  c.querySelectorAll("[data-locnow]").forEach(b=>b.onclick=async()=>{const md=b.dataset.locnow,m=$("#locmsg");
+   if(!confirm(`Publier ${md==="resultats"?"les résultats":"le programme"} sur le site maintenant ? (environ 2 minutes, garde l'outil ouvert)`))return;
+   b.disabled=true;setBusy("auto",true);msg(m,"muted",spin+"Lecture de la FFHB et publication… (environ 2 minutes)");
+   try{await post("api/auto/local/maintenant",{mode:md});const n0=(e.journal||[]).length;
+    const t=setInterval(async()=>{const r=await api("api/auto/local");if((r.journal||[]).length>n0||(r.journal[0]&&r.journal[0].date!==(e.journal[0]||{}).date)){clearInterval(t);montrerLoc(r);setBusy("auto",false,"<b>Publication terminée</b>");
+      const j=r.journal[0];msg($("#locmsg"),j.ok?"ok":"err",(j.ok?"✅ ":"❌ ")+esc(j.message))}},5000)}
+   catch(x){msg(m,"err",esc(x.message));b.disabled=false;setBusy("auto",false)}})};
+ if(GH){o.querySelector('[data-ou="local"]').style.display="none";const d=$("#ghdet");if(d)d.closest(".card").innerHTML='<p class="small muted" style="margin:0">Connexion à GitHub : <b>Réglages → Connexion administrateur</b>.</p>';setTimeout(()=>choisir("github"))}
+ else api("api/auto/local").then(e=>{choisir(e.mode_auto==="local"?"local":"github");montrerLoc(e)}).catch(()=>choisir("github"));
+ const fdate=d=>d?new Date(d).toLocaleString("fr-FR",{weekday:"short",day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}):"";
+ const RES={success:'<span class="ok">✅ réussie</span>',failure:'<span class="err">❌ échec</span>',cancelled:"annulée",skipped:"ignorée"};
+ const montrer=e=>{const c=$("#autoc");
+  if(e.depot&&$("#ghdep"))$("#ghdep").value=e.depot;if($("#ghtok"))$("#ghtok").placeholder=e.jeton?"jeton enregistré (laisser vide pour le garder)":"github_pat_...";
+  if(e.non_configure||e.erreur){if($("#ghdet"))$("#ghdet").open=true;
+   c.innerHTML=`<p class="${e.erreur?"err":"muted"} small" style="margin-top:12px">${e.erreur?esc(e.erreur):(GH?"Connecte d'abord ce téléphone : Réglages → « Connexion administrateur ».":"Pour piloter la publication automatique depuis l'outil, connecte d'abord GitHub (encadré ci-dessous).")}</p>`;return}
+  c.innerHTML=`${!e.workflow_actif?`<p class="err small">⚠️ La publication automatique est en pause sur GitHub (c'est automatique après 60 jours sans activité) : réactive un interrupteur pour la relancer.</p>`:""}
+   ${["resultats","programme"].map(m=>`<div class="autol"><label class="sw"><input type="checkbox" data-auto="${m}" ${e.modes[m]&&e.workflow_actif?"checked":""}><i></i><span><b>${m==="resultats"?"Résultats":"Programme"}</b> · <span class="small">${e.modes[m]&&e.workflow_actif?'<span class="ok">activée</span>':'<span class="muted">désactivée</span>'}</span><br><span class="small muted">${HEURE[m]}</span></span></label>
+    <button class="g mini" data-lancer="${m}">Publier maintenant</button></div>`).join("")}
+   <div class="autol"><span><b>Les articles automatiques sont…</b><br><span class="small muted">Brouillon : tu valides sur le site. Publiés : en ligne directement.</span></span>
+    <div class="seg"><button data-st="draft" class="${e.statut_publication!=="publish"?"on":""}">En brouillon</button><button data-st="publish" class="${e.statut_publication==="publish"?"on":""}">Publiés directement</button></div></div>
+   <h3>Dernières exécutions</h3>${e.executions.length?e.executions.map(r=>`<div class="small" style="padding:5px 0;border-bottom:1px solid var(--line)">${fdate(r.date)} · ${r.declencheur==="schedule"?"automatique":"lancée à la main"} · ${r.statut!=="completed"?spin+"en cours…":(RES[r.resultat]||esc(r.resultat||""))} · <a href="${esc(r.lien)}" target="_blank" rel="noopener">détails</a></div>`).join(""):'<p class="muted small">Aucune exécution pour l\'instant.</p>'}
+   <p class="small" style="margin-top:10px"><a href="${esc(e.lien)}" target="_blank" rel="noopener">Ouvrir sur GitHub</a></p>`;
+  c.querySelectorAll("[data-auto]").forEach(i=>i.onchange=async()=>{const m=$("#automsg");c.querySelectorAll("input,button").forEach(x=>x.disabled=true);
+   msg(m,"muted",spin+"Enregistrement sur GitHub…");
+   try{const r=await post("api/auto/regler",{mode:i.dataset.auto,actif:i.checked});if(r.erreur){msg(m,"err",esc(r.erreur));charger();return}
+    msg(m,"ok",`✅ Publication automatique ${i.dataset.auto==="resultats"?"des résultats":"du programme"} ${i.checked?"activée":"désactivée"}.`);montrer(r)}
+   catch(x){msg(m,"err","Erreur : "+esc(x.message));charger()}});
+  c.querySelectorAll("[data-st]").forEach(b=>b.onclick=async()=>{const m=$("#automsg");msg(m,"muted",spin+"Enregistrement…");
+   try{const r=await post("api/auto/statut",{statut:b.dataset.st});if(r.erreur){msg(m,"err",esc(r.erreur));return}msg(m,"ok","✅ Enregistré.");montrer(r)}catch(x){msg(m,"err",esc(x.message))}});
+  c.querySelectorAll("[data-lancer]").forEach(b=>b.onclick=async()=>{const md=b.dataset.lancer,m=$("#automsg");
+   if(!confirm(`Publier ${md==="resultats"?"les résultats":"le programme"} sur le site maintenant (via GitHub, 3 à 5 minutes) ?`))return;
+   b.disabled=true;msg(m,"muted",spin+"Lancement…");
+   try{const r=await post("api/auto/lancer",{mode:md});if(r.erreur){msg(m,"err",esc(r.erreur));b.disabled=false;return}
+    msg(m,"ok","✅ Lancé sur GitHub : l'article sera sur le site dans 3 à 5 minutes (tu peux fermer l'outil).");setTimeout(charger,4000)}
+   catch(x){msg(m,"err",esc(x.message));b.disabled=false}})};
+ const charger=async()=>{try{montrer(await api("api/auto/etat"))}catch(x){$("#autoc").innerHTML=`<p class="err small">Erreur : ${esc(x.message)}</p>`}};
+ if($("#ghsave"))$("#ghsave").onclick=async()=>{ghCharge=1;const m=$("#ghmsg");msg(m,"muted",spin+"Test…");
+  try{const r=await post("api/github/config",{depot:$("#ghdep").value,jeton:$("#ghtok").value});$("#ghtok").value="";
+   if(r.erreur){msg(m,"err",esc(r.erreur));return}msg(m,"ok","✅ Connecté à GitHub");if($("#ghdet"))$("#ghdet").open=false;montrer(Object.assign(r,{depot:$("#ghdep").value,jeton:true}))}
+  catch(x){msg(m,"err",esc(x.message))}};
+}
+// ---- ouvrir sur le téléphone ----
+const CLOUD=false,GH=typeof window.GHWEB!=="undefined";
+const surTel=CLOUD||!["localhost","127.0.0.1","::1","[::1]"].includes(location.hostname);
+function renderMobile(){const o=sec("mobile");
+ if(surTel||GH){o.innerHTML=`<div class="card"><h2>✅ ${CLOUD||GH?"Version en ligne : ouvrable partout, ordinateur éteint":"Tu es sur ton téléphone"}</h2><p class="small">Pour retrouver l'outil en un geste, ajoute-le à l'écran d'accueil :<br>• <b>iPhone (Safari)</b> : bouton Partager <span class="kbd">⬆</span> → « Sur l'écran d'accueil ».<br>• <b>Android (Chrome)</b> : menu <span class="kbd">⋮</span> → « Ajouter à l'écran d'accueil ».</p>
+  <p class="muted small">${GH?"Cette version tourne sur GitHub : elle s'ouvre partout (Wi-Fi ou 4G), même ordinateur éteint. Les actions (affiche, article, publication…) prennent 2 à 3 minutes, le temps que GitHub fasse le travail.":CLOUD?"Cette version tourne sur un serveur en ligne : elle s'ouvre partout (Wi-Fi ou 4G), même ordinateur éteint.":"L'outil tourne sur l'ordinateur : il doit être allumé, avec l'outil ouvert, et le téléphone sur le même Wi-Fi."}</p></div>`;return}
+ o.innerHTML=`<div class="card"><div class="loader"><div class="spin"></div>Chargement…</div></div>`;
+ const montrer=e=>{o.innerHTML=`<div class="card"><div class="autol" style="padding-top:0"><label class="sw"><input type="checkbox" id="mact" ${e.actif?"checked":""}><i></i><span><b>Accès depuis le téléphone</b> · <span class="small">${e.actif?'<span class="ok">activé</span>':'<span class="muted">désactivé</span>'}</span><br><span class="small muted">Le téléphone doit être sur le <b>même Wi-Fi</b> que cet ordinateur, et l'outil ouvert ici.</span></span></label></div>
+  ${e.erreur?`<p class="err small">${esc(e.erreur)}</p>`:""}
+  ${e.actif?`<div class="grid2" style="margin-top:14px;align-items:center">
+    <div style="text-align:center">${e.qr?`<div style="display:inline-block;background:#fff;padding:10px;border-radius:14px;line-height:0">${e.qr}</div>`:'<p class="muted small">(QR code indisponible : tape l\'adresse à la main)</p>'}</div>
+    <div><div class="etape" style="display:grid;grid-template-columns:30px 1fr;gap:10px;margin:0 0 12px"><b class="pill v" style="height:fit-content">1</b><div>Ouvre l'<b>appareil photo</b> du téléphone et vise le QR code, puis touche le lien.</div></div>
+     <div style="display:grid;grid-template-columns:30px 1fr;gap:10px;margin:0 0 12px"><b class="pill v" style="height:fit-content">2</b><div>Ou tape dans le navigateur du téléphone :<br><b style="font-size:17px">${esc(e.adresse)}</b><br>puis le code <b style="font-size:20px;letter-spacing:3px">${esc(e.code)}</b></div></div>
+     <div style="display:grid;grid-template-columns:30px 1fr;gap:10px;margin:0"><b class="pill v" style="height:fit-content">3</b><div>Ajoute-le à l'écran d'accueil (iPhone : Partager → « Sur l'écran d'accueil » ; Android : ⋮ → « Ajouter à l'écran d'accueil »). Le code n'est demandé qu'une fois.</div></div></div></div>
+   <div class="bar" style="margin-top:14px"><button class="g mini" id="mcode">Nouveau code</button><span class="muted small">déconnecte les téléphones déjà connectés</span></div>`:""}
+  </div>
+  <div class="card soft"><h2>Si le téléphone n'arrive pas à se connecter</h2><ul class="small" style="margin:8px 0 0;padding-left:18px">
+   <li>Vérifie que le téléphone est sur le <b>Wi-Fi</b> (pas en 4G/5G) et sur le même réseau que l'ordinateur.</li>
+   ${e.systeme==="Windows"?`<li><b>Windows</b> : à l'activation, une fenêtre « Pare-feu Windows » peut s'ouvrir : coche <b>Réseaux privés</b> puis <b>Autoriser l'accès</b>. Le Wi-Fi doit être en profil « Privé » (Paramètres → Réseau → Wi-Fi → ton réseau → Réseau privé).</li>`:
+    `<li><b>Mac</b> : si une fenêtre demande d'« accepter les connexions entrantes » pour Python, clique <b>Autoriser</b> (Réglages Système → Réseau → Coupe-feu).</li>`}
+   <li>Les Wi-Fi publics ou d'entreprise bloquent souvent ce type d'accès : utilise le Wi-Fi de la maison ou le partage de connexion du téléphone.</li>
+   <li>Le téléphone ne peut pas voir les mots de passe et les clés enregistrés (site, IA, GitHub).</li></ul></div>`;
+  $("#mact").onchange=async()=>{const r=await post("api/mobile",{actif:$("#mact").checked});montrer(r)};
+  const b=$("#mcode");if(b)b.onclick=async()=>{if(confirm("Créer un nouveau code ? Les téléphones déjà connectés devront le retaper."))montrer(await post("api/mobile",{nouveau_code:true}))}};
+ api("api/mobile").then(montrer).catch(x=>{o.innerHTML=`<div class="card err">Erreur : ${esc(x.message)}</div>`})}
+// ---- mode d'emploi ----
+function renderAide(){sec("aide").innerHTML=`<div class="guide">
+ <div class="card"><h2>À quoi sert l'outil ?</h2>
+  <p>L'outil lit tout seul les pages de la FFHB pour toutes les équipes du club, puis prépare ce dont la com' a besoin : résultats et programme du week-end, visuels pour les réseaux, affiche du prochain match de N1, vidéos pour l'écran géant, et articles pour le site. Rien n'est publié sans que tu cliques (sauf la publication automatique sur GitHub, voir plus bas).</p>
+  <p class="muted small">Les données sont gardées en mémoire : la page s'ouvre tout de suite avec la dernière lecture, puis se met à jour toute seule en arrière-plan (point orange en haut = lecture en cours, point vert = à jour).</p></div>
+ <div class="card"><h2>La semaine type</h2>
+  <div class="etape"><i>1</i><div><b>Lundi – résultats.</b> Onglet <b>Visuels</b> → « Résultats » sur le « Dernier » week-end. Télécharge les images pour Instagram, ou « Publier dans les actualités du site ». Le <b>Texte réseaux</b> donne la légende prête à copier.</div></div>
+  <div class="etape"><i>2</i><div><b>Mercredi – programme.</b> Bouton « À venir » en haut, puis <b>Visuels</b> → « Programme ». Si un horaire FFHB est faux, corrige-le depuis l'onglet <b>Affiche</b> (champ « Horaire réel ») : il est corrigé partout.</div></div>
+  <div class="etape"><i>3</i><div><b>Avant un match de N1 à domicile – affiche.</b> Onglet <b>Affiche</b>, choisis « Championnat » ou « Coupe de France », puis « Créer l'affiche ». Chaque clic prend une nouvelle photo ; « Valider cette photo » la garde. Ajoute un logo manquant, des infos (entrée gratuite, buvette…) ou corrige l'horaire, l'affiche se refait seule.</div></div>
+  <div class="etape"><i>4</i><div><b>Jour de match – écran géant.</b> Onglet <b>Écran géant</b> → « Créer les vidéos » (une par Nationale), à lancer sur l'écran en boucle.</div></div>
+  <div class="etape"><i>5</i><div><b>Quand tu veux – article.</b> Onglet <b>Article</b> : écris en vrac, ajoute des photos, choisis la rubrique. L'IA rédige, l'outil crée le brouillon sur le site avec l'image à la une, puis « Publier sur le site ».</div></div></div>
+ <div class="card"><h2>Les onglets en détail</h2><ul>
+  <li><b>Accueil</b> : le résumé du week-end choisi (bilan, prochains matchs) et l'accès rapide à tout.</li>
+  <li><b>Matchs du club</b> : scores, horaires, salles et classements de chaque équipe. Les équipes sans match sont regroupées en bas. Le cadre « contrôle » signale une équipe dont la page FFHB pose problème.</li>
+  <li><b>Tous les matchs</b> : tous les matchs des poules du club ce week-end.</li>
+  <li><b>Visuels</b> : images 1080 × 1350 (fond bleu ou jaune). Elles restent en mémoire : tu peux changer d'onglet pendant la création, une pastille jaune clignote dans le menu tant que ça travaille, et un message te prévient quand c'est prêt.</li>
+  <li><b>Texte réseaux</b> : la légende du week-end, à copier.</li>
+  <li><b>Affiche</b> : N1 championnat ou Coupe de France, formats réseaux (4:5) et A4 (PNG + PDF). Match d'ouverture N3 M et partenaire du match ajoutés tout seuls.</li>
+  <li><b>Écran géant</b> : vidéos 1920 × 1080 de 10 s en boucle, une par Nationale.</li>
+  <li><b>Écrire un article</b> : rédaction par IA (Gemini gratuit ou Claude), brouillon sur le site, vérification qu'il apparaît dans Actualités.</li>
+  <li><b>Articles du site</b> : menu déroulant des derniers articles du site, pour les voir, les modifier ou les supprimer (corbeille ou définitivement avec leurs images).</li>
+  <li><b>Publication auto</b> : choisis où elle se fait — <b>sur cet ordinateur</b> (allumé ou en veille, outil fermé, rattrapage au démarrage) ou <b>sur GitHub</b> (même ordinateur éteint) — puis active ou coupe les résultats (mardi 10 h) et le programme (mercredi 18 h), brouillon ou publication directe, « Publier maintenant ».</li>
+  <li><b>Réglages</b> : connexion au site WordPress, clé IA, liste des équipes et liens FFHB.</li></ul></div>
+ <div class="card"><h2>Astuces</h2><ul>
+  <li><b>Changer de week-end</b> : flèches ◀ ▶ en haut, « À venir » ou « Dernier ».</li>
+  <li><b>Actualiser</b> relit toutes les pages FFHB (environ 1 minute) ; la page reste utilisable pendant ce temps et se complète au fur et à mesure.</li>
+  <li><b>Coupes de France</b> : rien à changer d'un tour à l'autre, l'outil suit les tours tout seul.</li>
+  <li><b>Logos</b> : envoie-les depuis l'onglet Affiche, même avec un fond (blanc, couleur, damier) : il est retiré automatiquement.</li>
+  <li><b>Photos d'affiche</b> : ajoute tes photos de match dans le dossier <span class="kbd">affiche/photos</span>.</li>
+  <li><b>Partenaire du match</b> : fichier <span class="kbd">affiche/partenaires/partenaires_matchs.json</span> (date → logo).</li>
+  <li><b>Sur téléphone</b> : onglet « Sur téléphone » sur l'ordinateur → active l'accès et scanne le QR code avec le téléphone (même Wi-Fi). L'ordinateur doit rester allumé avec l'outil ouvert.</li></ul></div>
+ <div class="card"><h2>Publication automatique (GitHub)</h2>
+  <p>Le dépôt GitHub publie tout seul les résultats le mardi à 10 h et le programme le mercredi à 18 h, <b>même ordinateur éteint</b>. Tu l'actives ou la coupes dans l'onglet <b>Publication auto</b>. Après une mise à jour de l'outil, remplace aussi <span class="kbd">ffhb_resultats.py</span> (et le dossier <span class="kbd">.github</span>) dans le dépôt.</p></div>
+ <div class="card"><h2>En cas de problème</h2><ul>
+  <li><b>Une équipe « à vérifier »</b> : le lien FFHB n'est plus le bon (nouvelle phase). Ouvre-le, choisis la bonne poule et colle le lien dans Réglages.</li>
+  <li><b>Score non saisi</b> : le club adverse ne l'a pas encore entré sur la FFHB ; il apparaîtra à la prochaine lecture.</li>
+  <li><b>Page FFHB illisible</b> : clique sur « Actualiser ». Si ça continue, zippe le dossier <span class="kbd">ffhb_debug</span> et envoie-le à Claude.</li>
+  <li><b>L'outil ne s'ouvre pas</b> : relance « Lancer (Mac) » ou « Lancer (Windows) » ; la fenêtre noire doit rester ouverte pendant l'utilisation.</li></ul></div>
+</div>`}
+// ---- chargement des données, état, mises à jour en arrière-plan ----
+function etat(){if(!data)return;const p=data.progression||{},enCours=data.maj_en_cours||data.salles_en_cours;
+ const txt=enCours?(p.total?`Lecture FFHB : ${p.lus}/${p.total} équipe${p.total>1?"s":""}…`:"Mise à jour en cours…"):`À jour · lecture du ${esc(data.genere)}`;
+ $("#etat").innerHTML=`<span class="pt ${enCours?"maj":""}"></span><span>${txt}</span>`;
+ $("#sidemeta").innerHTML=`${esc(data.club||"")}<br>${txt}`;
+ const auj=new Date().toISOString().slice(0,10);
+ $("#wlabel").textContent=(offset===0?(auj>=data.du&&auj<=data.au?"Ce week-end : ":"Dernier : "):offset===-1?"À venir : ":offset<0?"Dans "+(-offset)+" sem. : ":"")+dd(data.du)+" → "+dd(data.au)}
+let suivi=null,dernierLus=-1;
+function surveille(){if(suivi)return;suivi=setInterval(async()=>{try{const e=await api("api/etat");
+  const lus=(e.progression||{}).lus||0;
+  if(data){data.progression=e.progression;data.maj_en_cours=e.maj_en_cours;data.salles_en_cours=e.salles_en_cours;etat()}
+  if(!e.maj_en_cours&&!e.salles_en_cours){clearInterval(suivi);suivi=null;dernierLus=-1;load(false,true);return}
+  if(lus!==dernierLus){dernierLus=lus;if(lus>0)load(false,true)}}catch(x){}},2500)}
+async function load(force,silencieux){const n=charge=(charge||0)+1;
+ if(!silencieux){["club","all","post"].forEach(v=>{if(rendu[v]!==-1){rendu[v]=-1;sec(v).innerHTML='<div class="card loader"><div class="spin"></div>Chargement…</div>'}})}
+ $("#refresh").disabled=$("#mrefresh").disabled=!!force;
+ try{const d=await api(`api/resultats?offset=${offset}${force?"&force=1":""}`);if(n!==charge)return;   // réponse d'un ancien clic : ignorée
+  if(d.erreur)throw new Error(d.erreur);
+  const chg=!data||d.du!==data.du;data=d;dataV++;etat();
+  if(chg){vmode=null}
+  if(["club","all","post","accueil"].includes(view))afficher(view);
+  else if(view==="visuel"&&chg)renderVisuel();
+  if(d.maj_en_cours||d.salles_en_cours)surveille()}
+ catch(e){if(n!==charge)return;$("#etat").innerHTML=`<span class="pt" style="background:var(--loss)"></span><span class="err">${esc(e.message)}</span>`;
+  ["club","all","post","accueil"].forEach(v=>{rendu[v]=-1;sec(v).innerHTML=`<div class="card err">Erreur : ${esc(e.message)}</div>`})}
+ finally{if(n===charge){$("#refresh").disabled=$("#mrefresh").disabled=false;$("#next").disabled=offset<=-4}}}
+function changerWE(o){if(o===offset)return;offset=Math.max(-4,Math.min(8,o));vmode=null;load()}
+$("#prev").onclick=()=>changerWE(offset+1);$("#next").onclick=()=>changerWE(offset-1);
+$("#avenir").onclick=()=>changerWE(-1);$("#dernier").onclick=()=>changerWE(0);
+$("#refresh").onclick=$("#mrefresh").onclick=()=>{load(true);toast("Relecture de toutes les pages FFHB lancée : la page se complète au fur et à mesure.")};
+construireChips();
+api("api/config").then(c=>{cfg=c;if(view==="cfg"&&!init.cfg){init.cfg=1;renderCfg()}}).catch(()=>{});
+go((location.hash||"").slice(1)||LS.get("ffhb_vue","accueil"));
+window.addEventListener("hashchange",()=>{const v=location.hash.slice(1);if(v&&v!==view)go(v)});
+load();
+</script></body></html>
